@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Final Exam Practice Quiz</title>
+<style>
+  :root{
+    --bg:#14151a;
+    --panel:#1c1e26;
+    --panel2:#24262f;
+    --text:#e7e7ea;
+    --dim:#9ca0aa;
+    --accent:#8cbfff;
+    --accent2:#2a3a5c;
+    --ok:#63d08a;
+    --bad:#f47272;
+    --border:#2d2f3a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Consolas','Courier New',monospace;}
+  body{min-height:100vh;padding:40px 20px;display:flex;justify-content:center}
+  .wrap{width:100%;max-width:760px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:40px;color:var(--dim);font-size:13px}
+  .title-eyebrow{color:var(--dim);letter-spacing:3px;font-size:12px;text-transform:uppercase;margin-bottom:8px}
+  h1{font-size:42px;margin:0 0 8px 0;font-family:'Consolas','Courier New',monospace}
+  .subtitle{color:var(--dim);margin-bottom:32px}
+  .tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--panel);border-radius:10px;padding:6px;margin-bottom:24px}
+  .tab{padding:12px;text-align:center;border-radius:8px;cursor:pointer;color:var(--dim);user-select:none}
+  .tab.active{background:var(--accent);color:#0c1222;font-weight:bold}
+  .toggle{display:flex;align-items:center;gap:10px;margin-bottom:20px;cursor:pointer}
+  .toggle input{accent-color:var(--accent);transform:scale(1.2)}
+  .section-list{display:flex;flex-direction:column;gap:12px}
+  .section-card{background:var(--panel);padding:22px;border-radius:10px;cursor:pointer;border:1px solid transparent;transition:all .15s}
+  .section-card:hover{border-color:var(--accent);background:var(--panel2)}
+  .section-card h3{margin:0 0 6px 0;font-size:18px;font-weight:bold}
+  .section-card .count{color:var(--dim);font-size:13px}
+  .qbox{background:var(--panel);border-radius:10px;padding:28px;margin-top:16px}
+  .qmeta{color:var(--dim);font-size:13px;margin-bottom:14px;display:flex;justify-content:space-between}
+  .qtext{font-size:16px;line-height:1.55;margin-bottom:18px;white-space:pre-wrap}
+  .routput{background:#0e0f13;border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12.5px;white-space:pre;overflow-x:auto;margin:12px 0;color:#c7cbd1}
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all .1s;font-size:14.5px;line-height:1.45}
+  .opt:hover{border-color:var(--accent)}
+  .opt.chosen{border-color:var(--accent);background:var(--accent2)}
+  .opt.correct{border-color:var(--ok);background:rgba(99,208,138,.14)}
+  .opt.wrong{border-color:var(--bad);background:rgba(244,114,114,.14)}
+  .opt.locked{cursor:default}
+  .explain{margin-top:16px;padding:14px;background:#0e0f13;border-left:3px solid var(--accent);border-radius:4px;font-size:13.5px;line-height:1.55;color:#d0d4dc}
+  .nav{display:flex;justify-content:space-between;margin-top:22px;gap:10px}
+  button{background:var(--panel2);color:var(--text);border:1px solid var(--border);padding:11px 22px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:14px}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);color:#0c1222;font-weight:bold;border-color:var(--accent)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .progress{height:4px;background:var(--panel2);border-radius:2px;overflow:hidden;margin-bottom:18px}
+  .progress .bar{height:100%;background:var(--accent);transition:width .3s}
+  .finish{text-align:center;padding:40px 20px}
+  .finish h2{font-size:36px;margin:10px 0}
+  .finish .score{font-size:60px;color:var(--accent);margin:18px 0;font-weight:bold}
+  .finish .pct{color:var(--dim);font-size:16px}
+  code{background:#0e0f13;padding:1px 6px;border-radius:3px;font-size:.95em;color:#d4dcec}
+  .topic{display:inline-block;background:var(--accent2);color:var(--accent);font-size:11px;padding:3px 10px;border-radius:10px;margin-bottom:8px;letter-spacing:1px;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+// =============================================================
+//  QUESTION BANKS
+//  Each section has `base` (20 MC) and `bonus` (5 R-output MC).
+//  fields per question: q, options[4], correct (0..3), explain,
+//                       (optional) output = R output block
+// =============================================================
+const BANKS = {
+  mlr: {
+    name: "Multiple Regression",
+    base: [
+      {q:"Which is the correct R function to fit a multiple LINEAR regression with continuous Y?",options:["A) glm(Y ~ X, family=binomial)","B) lm(Y ~ X1 + X2, data=data)","C) aov(Y ~ X1 * X2)","D) glm(Y ~ X, family=poisson)"],correct:1,explain:"lm() is used for continuous Y. glm(..., binomial) is logistic; glm(..., poisson) is for counts; aov() is for ANOVA."},
+      {q:"The formula <code>lm(Y ~ . - CatVar, data=data)</code> means:",options:["A) Fit Y against CatVar only","B) Fit Y against ALL predictors except CatVar","C) Fit Y without an intercept","D) Drop Y from the model"],correct:1,explain:"`.` means all columns; `- CatVar` excludes that column from the predictors."},
+      {q:"Adjusted R-squared differs from R-squared because:",options:["A) Adj R² is always larger than R²","B) Adj R² penalizes adding predictors that don't improve the fit; it can DECREASE when useless predictors are added","C) They are identical","D) Adj R² is computed on test data"],correct:1,explain:"R² always rises (or stays) when predictors are added. Adj R² penalizes complexity and can drop if a predictor doesn't add value."},
+      {q:"<code>predict(model, newdata, interval=\"prediction\")</code> vs <code>interval=\"confidence\"</code>:",options:["A) Prediction interval is narrower than confidence interval","B) They are the same","C) Prediction interval is WIDER; it adds individual-observation variability on top of mean uncertainty","D) Confidence interval is for new predictions"],correct:2,explain:"CI is for the mean response; PI is for a single new observation and includes extra variability, hence always wider."},
+      {q:"<code>anova(reduced, full)</code> tests:",options:["A) Whether each coefficient is zero","B) Whether the full (larger) model is significantly better than the reduced (nested) model","C) Homoscedasticity","D) Normality of residuals"],correct:1,explain:"It performs a partial F-test for nested models. p < 0.05 → keep the full model. Models MUST be nested."},
+      {q:"VIF = 12.5 for a predictor indicates:",options:["A) The predictor is perfectly independent","B) Serious multicollinearity (VIF>10); consider dropping, combining, or Ridge/Lasso","C) The predictor is statistically significant","D) The model has a large R²"],correct:1,explain:"VIF thresholds: 1-5 acceptable, 5-10 potential, >10 serious. High VIF inflates SEs."},
+      {q:"Cook's Distance for observation #42 is 2.1. What does this mean?",options:["A) The observation has an unusual X value only","B) The observation is strongly influential: removing it would substantially change the fitted regression","C) The observation should always be deleted","D) Cook's D > 1 means the model is perfect"],correct:1,explain:"Cook's D > 1 is an influential observation (combines leverage and residual magnitude). Investigate; don't blindly delete."},
+      {q:"A categorical predictor with 5 levels creates how many dummy variables in lm()?",options:["A) 5","B) 4 (k − 1)","C) 1","D) 10"],correct:1,explain:"With k levels, (k−1) dummies are created; one level is the reference."},
+      {q:"If <code>data$Region</code> = factor with levels (North, South, East, West) and \"North\" is reference, the coefficient <code>RegionSouth = 500</code> means:",options:["A) South has mean 500 for Y","B) South's mean Y is 500 units HIGHER than North's mean Y (holding other predictors fixed)","C) South adds 500 to the intercept for everyone","D) North is 500 units higher than South"],correct:1,explain:"Dummy coefficients = difference in mean Y vs. the reference level, with other predictors held constant."},
+      {q:"Calling <code>step(full_model)</code> by default uses which criterion?",options:["A) BIC","B) AIC (k = 2)","C) Adjusted R²","D) p-value"],correct:1,explain:"step() uses AIC by default (k=2). Use k=log(n) to switch to BIC."},
+      {q:"Compared to AIC, BIC:",options:["A) Always selects the same model","B) Penalizes complexity LESS","C) Penalizes complexity MORE (k=log(n)), tending to select smaller models","D) Cannot be used for GLMs"],correct:2,explain:"BIC uses log(n) instead of 2 as the penalty. For n>7, log(n)>2 so BIC favors smaller models."},
+      {q:"The Residuals vs Fitted plot is primarily used to check:",options:["A) Normality of the response","B) Linearity and homoscedasticity (look for random scatter, no pattern)","C) Sample size","D) Multicollinearity"],correct:1,explain:"A trumpet / curve pattern signals non-linearity or non-constant variance. Q-Q plot checks normality instead."},
+      {q:"A Q-Q plot of residuals shows points curving away from the line at both ends. This suggests:",options:["A) Residuals are exactly normal","B) Heavy tails (non-normality); formal tests or robust methods may be warranted","C) Perfect linearity","D) The intercept is wrong"],correct:1,explain:"S-shaped or curved Q-Q plots indicate non-normal residuals (heavy or light tails)."},
+      {q:"Homoscedasticity means:",options:["A) The residuals are normally distributed","B) Constant variance of residuals across fitted values","C) Predictors are uncorrelated","D) The model has no intercept"],correct:1,explain:"Homoscedasticity = equal variance. Heteroscedasticity (funnel shapes) violates OLS assumptions."},
+      {q:"Test MSE is a better quality indicator than training MSE because:",options:["A) Test MSE is smaller","B) Training MSE can be made arbitrarily small by overfitting; test MSE reflects generalization","C) Training MSE is biased upward","D) They are equal"],correct:1,explain:"Complex models can memorize training data (low training MSE) but fail on new data. Always evaluate on held-out data."},
+      {q:"<code>lm(Y ~ X1 * X2)</code> is shorthand for:",options:["A) Y ~ X1 + X2 only","B) Y ~ X1 + X2 + X1:X2 (main effects plus interaction)","C) Y ~ X1 * X2 as a product only","D) Y ~ X1 / X2"],correct:1,explain:"In R, * expands to both main effects and their interaction. Use : for the interaction only."},
+      {q:"Why create <code>x = model.matrix(Y ~ ., data)[,-1]</code> for glmnet?",options:["A) To remove NA rows","B) glmnet needs a numeric matrix (not a data frame or formula); model.matrix builds dummies for factors and the [,-1] drops the intercept column","C) To sort the columns","D) To standardize"],correct:1,explain:"glmnet cannot accept formulas; it needs a numeric X matrix. model.matrix handles categorical variable encoding."},
+      {q:"If F-statistic for a multiple regression has p < 0.001, this means:",options:["A) Every predictor is significant","B) At least ONE predictor has a non-zero coefficient","C) R² equals 1","D) No predictor is significant"],correct:1,explain:"The F-test checks H0: all slopes = 0. Rejecting it means at least one slope is nonzero — not that all are."},
+      {q:"A 95% confidence interval for a slope that contains 0 indicates:",options:["A) The slope is significantly different from zero at α=0.05","B) The slope is NOT significantly different from zero at α=0.05 (same conclusion as p > 0.05)","C) The predictor must be removed","D) The model is wrong"],correct:1,explain:"CI containing 0 and p ≥ 0.05 are equivalent statements."},
+      {q:"Outliers and leverage: which combination is the MOST concerning?",options:["A) Low leverage and small residual","B) High leverage with large residual (= high influence; Cook's D usually large)","C) High leverage alone","D) Small residual alone"],correct:1,explain:"Leverage = unusual X. Outlier = unusual Y. Together = influential. A lone high-leverage point with a small residual may be harmless."}
+    ],
+    bonus: [
+      {q:"Given this output, what is the predicted Y when X1=3 and X2=2?",output:"## Coefficients:\n##             Estimate\n## (Intercept)   5.00\n## X1            1.50\n## X2           -0.80",options:["A) 6.9","B) 7.9","C) 9.5","D) 4.5"],correct:1,explain:"Y_hat = 5 + 1.5(3) + (−0.8)(2) = 5 + 4.5 − 1.6 = 7.9."},
+      {q:"<code>vif(model)</code> returns: X1=1.3, X2=9.2, X3=14.5, X4=2.1. What should you do?",options:["A) Drop X1 (VIF too small)","B) Address X3 (VIF>10 = serious); consider Ridge/Lasso or removing a correlated variable","C) Drop all four and refit with no predictors","D) Nothing; these are all acceptable"],correct:1,explain:"Only X3 exceeds 10. Low VIFs indicate uncorrelated predictors — those are fine."},
+      {q:"<code>cooks.distance(model)</code> shows obs 34 with value 1.48. Best action:",options:["A) Delete obs 34 immediately","B) Investigate obs 34 (data-entry error? legitimate extreme? refit with/without to check sensitivity)","C) Ignore — Cook's D is meaningless","D) Multiply all responses by a constant"],correct:1,explain:"Cook's D > 1 = highly influential. Investigate before deleting; the point may be a genuine but extreme observation."},
+      {q:"<code>anova(reduced, full)</code> returns F=4.12, p=0.018. What do you conclude?",options:["A) Keep the reduced model","B) Keep the FULL model — the added predictors jointly improve fit at α=0.05","C) Both models are equivalent","D) anova requires p > 0.05 to keep full"],correct:1,explain:"p < 0.05 → reject H0 (no improvement). The extra predictors add significant explanatory power."},
+      {q:"<code>step(full_model, k=log(nrow(data)))</code> retains 4 of 10 predictors. This is:",options:["A) A Forward-selection model with AIC","B) BIC-based stepwise selection (k=log(n)); stricter than AIC, often yielding a smaller model","C) A non-regularized OLS fit","D) A regression with no intercept"],correct:1,explain:"k=log(n) converts step() to BIC. BIC's heavier penalty leads to smaller models."}
+    ],
+    prof: [
+      {q:"The goal of linear regression is to:",options:["A) Classify data","B) Model relationship between variables","C) Reduce dimensionality","D) Rank observations"],correct:1,explain:"Linear regression models the relationship between predictors and a continuous response variable."},
+      {q:"In simple linear regression, the model is:",options:["A) y = β₀ + β₁x + ε","B) y = x² + ε","C) log(y) = x","D) y = ε"],correct:0,explain:"Standard linear regression equation with an error term."},
+      {q:"The term ε (epsilon) represents:",options:["A) Coefficient","B) Predictor","C) Random error","D) Mean"],correct:2,explain:"ε captures random variation not explained by the model."},
+      {q:"The method used to estimate coefficients is:",options:["A) Maximum likelihood only","B) Least squares","C) Gradient descent","D) PCA"],correct:1,explain:"Coefficients are estimated by minimizing the sum of squared errors (OLS)."},
+      {q:"Residuals are defined as:",options:["A) Predicted − observed","B) Observed − predicted","C) Mean − predicted","D) Variance − mean"],correct:1,explain:"Residual = actual value minus predicted value."},
+      {q:"The objective of least squares is to minimize:",options:["A) Sum of residuals","B) Sum of squared residuals","C) Mean of residuals","D) Variance"],correct:1,explain:"Squaring makes values positive and penalizes large errors."},
+      {q:"R-squared represents:",options:["A) Total variance","B) Residual variance","C) Proportion of variance explained","D) Mean error"],correct:2,explain:"R² measures how well the model explains variability in Y."},
+      {q:"R-squared ranges between:",options:["A) −1 and 1","B) 0 and 1","C) 0 and ∞","D) −∞ and ∞"],correct:1,explain:"R² is bounded between 0 (no fit) and 1 (perfect fit)."},
+      {q:"A higher R-squared indicates:",options:["A) Worse model","B) Better fit","C) More bias","D) Smaller sample"],correct:1,explain:"Higher R² means more variance explained."},
+      {q:"Adjusted R-squared differs because it:",options:["A) Always increases","B) Penalizes adding unnecessary predictors","C) Ignores predictors","D) Measures variance only"],correct:1,explain:"Adjusts for number of predictors to prevent overfitting."},
+      {q:"In multiple regression, we have:",options:["A) One predictor","B) Two responses","C) Multiple predictors","D) No predictors"],correct:2,explain:"Multiple regression uses several independent variables."},
+      {q:"Multicollinearity occurs when:",options:["A) Variables are independent","B) Predictors are highly correlated","C) Errors are large","D) Sample size is small"],correct:1,explain:"Multicollinearity = strong correlation among predictors."},
+      {q:"Multicollinearity mainly affects:",options:["A) Predictions only","B) Coefficient stability","C) Sample size","D) Residuals"],correct:1,explain:"Leads to unstable / unreliable coefficient estimates."},
+      {q:"The assumptions of linear regression include:",options:["A) Independence, normality, constant variance","B) Only normality","C) Only independence","D) Only constant variance"],correct:0,explain:"Key assumptions: independence, normality of errors, homoscedasticity."},
+      {q:"Homoscedasticity means:",options:["A) Equal means","B) Equal variances of errors","C) Independent predictors","D) Normal distribution"],correct:1,explain:"Constant variance of residuals across levels of X."},
+      {q:"If variance of errors changes, this is called:",options:["A) Multicollinearity","B) Heteroscedasticity","C) Normality","D) Independence"],correct:1,explain:"Unequal variance is heteroscedasticity."},
+      {q:"The p-value for a coefficient tests:",options:["A) Whether variance is zero","B) Whether coefficient equals zero","C) Whether residuals are normal","D) Whether R² is large"],correct:1,explain:"Tests H₀: β = 0 (no effect)."},
+      {q:"A small p-value indicates:",options:["A) Weak evidence","B) Strong evidence against H₀","C) Large variance","D) Poor fit"],correct:1,explain:"Small p → reject null hypothesis."},
+      {q:"Outliers can affect regression by:",options:["A) Improving fit","B) Changing coefficient estimates","C) Reducing variance","D) Increasing R² always"],correct:1,explain:"Outliers can heavily influence the regression line."},
+      {q:"The difference between correlation and regression is:",options:["A) No difference","B) Correlation implies causation","C) Regression models relationships, correlation measures strength only","D) Regression measures only variance"],correct:2,explain:"Correlation measures association strength; regression models the relationship."}
+    ]
+  },
+  anova: {
+    name: "Two-Way ANOVA",
+    base: [
+      {q:"In <code>aov(Y ~ F1 * F2)</code>, the * symbol means:",options:["A) F1 times F2 (multiplication)","B) F1 + F2 + F1:F2 (main effects + interaction)","C) Interaction only","D) Excludes F2"],correct:1,explain:"* expands to both main effects and the interaction. Use + for main-effects-only; : for the interaction alone."},
+      {q:"A two-way ANOVA has a significant F1×F2 interaction (p=0.003). What should you do?",options:["A) Interpret F1 and F2 main effects directly","B) Do NOT interpret main effects alone; examine simple effects with emmeans","C) Drop both factors","D) Switch to a one-way ANOVA"],correct:1,explain:"Main effects average over levels of the other factor. When interaction exists, that average is misleading — analyze within-level (simple) effects."},
+      {q:"Parallel lines on an interaction plot indicate:",options:["A) A strong interaction","B) NO interaction (main effects can be interpreted directly)","C) A violation of normality","D) Missing data"],correct:1,explain:"Parallel = effect of one factor is consistent across levels of the other = no interaction."},
+      {q:"<code>TukeyHSD(m, which=\"F1\")</code> gives a CI of (-1.2, 2.5) for one pair. This means:",options:["A) The two levels differ significantly","B) The CI contains 0 → no significant difference at the specified family-wise α","C) The test failed","D) The CI is wrong"],correct:1,explain:"CI containing 0 ⇔ adj p > 0.05. Tukey HSD accounts for all pairwise comparisons simultaneously."},
+      {q:"Before running aov(), both grouping variables should be:",options:["A) Numeric","B) Converted to factors via <code>factor()</code> or <code>as.factor()</code>","C) Removed","D) Standardized"],correct:1,explain:"aov() treats numeric variables as continuous. factor() ensures they're treated as categorical."},
+      {q:"The total number of hypotheses tested in a two-way ANOVA with interaction is:",options:["A) 1","B) 2","C) 3 (main effect F1, main effect F2, interaction F1:F2)","D) 4"],correct:2,explain:"Three separate F-tests: F1, F2, and F1:F2."},
+      {q:"A simple effect is:",options:["A) A main effect averaged across levels of the other factor","B) The effect of one factor WITHIN a specific level of the other factor","C) Always equal to the main effect","D) Only computed when interaction is NOT significant"],correct:1,explain:"Simple effects isolate each level of one factor and test the other factor within it — appropriate when interaction is present."},
+      {q:"<code>pairs(emmeans(m, ~F1 | F2), adjust=\"tukey\")</code> does what?",options:["A) Tests F1 overall (ignoring F2)","B) Computes pairwise comparisons of F1 levels WITHIN each level of F2, with Tukey adjustment","C) Fits a new model","D) Plots the data"],correct:1,explain:"The | operator requests within-level comparisons; it's the go-to call when interaction is significant."},
+      {q:"ANOVA assumptions include:",options:["A) Binary response","B) Normally distributed residuals, equal variance across cells, independent observations","C) A large number of predictors","D) The response must be a count"],correct:1,explain:"These three parametric assumptions are shared with regression. Check with plot(model) and Levene/Bartlett tests."},
+      {q:"If interaction is NOT significant, the recommended approach is:",options:["A) Still interpret simple effects","B) Refit with the additive model <code>aov(Y ~ F1 + F2)</code> and interpret main effects with post-hoc tests","C) Remove F1","D) Increase sample size"],correct:1,explain:"Dropping a non-significant interaction yields a simpler, more powerful test of the main effects."},
+      {q:"The interaction term <code>F1:F2</code> represents:",options:["A) F1 + F2","B) That the effect of F1 depends on the level of F2 (and vice versa)","C) A control variable","D) The intercept"],correct:1,explain:"Interaction = differential effect: the F1 effect is NOT the same at every level of F2."},
+      {q:"Which function lets you visually check for interaction?",options:["A) hist()","B) <code>interaction.plot(F1, F2, Y)</code>","C) boxplot()","D) pairs()"],correct:1,explain:"interaction.plot plots mean Y across F1, with separate lines per F2 level. Non-parallel lines suggest interaction."},
+      {q:"In a balanced two-way design, balanced means:",options:["A) Equal sample sizes in each cell (each F1×F2 combination has the same n)","B) The data are normally distributed","C) Equal means","D) Equal variances"],correct:0,explain:"Balanced = equal n per cell. It simplifies sums-of-squares partitioning and makes Type I = Type III SS."},
+      {q:"aov() vs lm() for ANOVA data:",options:["A) They give totally different results","B) aov() is a wrapper around lm() tailored for ANOVA output (Type I SS); for balanced designs both yield equivalent inference","C) lm() cannot handle factors","D) aov() only works for one-way ANOVA"],correct:1,explain:"aov() calls lm() internally. summary(aov) gives the classical ANOVA table; summary(lm) shows coefficient-level output."},
+      {q:"plot(aov_fit) diagnostic plots check:",options:["A) The same residual assumptions as regression (normality, constant variance, leverage)","B) The number of observations","C) The design matrix rank","D) The p-values"],correct:0,explain:"Same diagnostic panels as lm(): Residuals vs Fitted, Q-Q, Scale-Location, Residuals vs Leverage."},
+      {q:"Which adjustment is MOST conservative for multiple comparisons?",options:["A) None (raw p-values)","B) Bonferroni (p × number of tests)","C) Holm","D) BH (FDR)"],correct:1,explain:"Bonferroni is the most conservative: multiplies p-values by the number of comparisons. Holm and BH are typically less strict."},
+      {q:"ANOVA compares:",options:["A) Proportions across groups","B) Group MEANS of a continuous response","C) Medians only","D) Variances only"],correct:1,explain:"ANOVA tests differences in means across groups (using variances in the calculation)."},
+      {q:"A Mean Square in an ANOVA table is:",options:["A) The sum of all residuals","B) Sum of Squares divided by degrees of freedom (SS/df) for that source","C) The mean response","D) The geometric mean"],correct:1,explain:"Mean Square = SS/df. F = MS_factor / MS_residual."},
+      {q:"When the interaction is significant, TukeyHSD on the combined factor levels is called:",options:["A) A simple effects analysis","B) A cell-means comparison (<code>TukeyHSD(aov(Y~F1:F2))</code>-style)","C) An identity test","D) A one-sample test"],correct:1,explain:"You can compare all cell combinations directly; emmeans with | is an equivalent, cleaner approach."},
+      {q:"Why fit the interaction model FIRST, even when you suspect no interaction?",options:["A) Because additive models are biased","B) To test the interaction formally; only drop it if non-significant (data-driven decision)","C) To double the sample size","D) Because aov() requires it"],correct:1,explain:"Fitting the interaction first lets you test H0: no interaction. If not rejected, refit without it for simpler main-effects interpretation."}
+    ],
+    bonus: [
+      {q:"Interpret this ANOVA table:",output:"##           Df Sum Sq Mean Sq F value  Pr(>F)\n## F1         2  248.0  124.00   12.40  0.0002\n## F2         3  410.0  136.67   13.67 4.1e-06\n## F1:F2      6   65.0   10.83    1.08  0.3890\n## Residuals 72  720.0   10.00",options:["A) Interpret the interaction (p=0.389 → significant)","B) Interaction NOT significant; refit additive model and interpret F1 and F2 main effects (both sig, p<0.05)","C) All effects are non-significant","D) Only F1:F2 is significant"],correct:1,explain:"Interaction p=0.389 (not sig). Both main effects are significant (p<0.001). Drop interaction and interpret F1, F2 directly."},
+      {q:"TukeyHSD for F1 returns: A-B (p=0.001), A-C (p=0.021), B-C (p=0.540). Which pairs differ significantly at α=0.05?",options:["A) All three pairs","B) A-B and A-C","C) Only A-B","D) None"],correct:1,explain:"A-B and A-C have adj p < 0.05 (reject); B-C does not (fail to reject). Only A-B and A-C differ."},
+      {q:"<code>emmeans(m, ~F1 | F2=\"low\")</code> output shows F1 levels 'a' and 'b' differ with p=0.007. This is a:",options:["A) Main effect","B) Simple effect of F1 within F2=low","C) Marginal effect across all F2","D) Residual effect"],correct:1,explain:"Using | F2=\"low\" restricts the comparison of F1 levels to that single F2 level → simple effect."},
+      {q:"An interaction plot shows two lines that cross sharply. What does this imply?",options:["A) No interaction","B) Strong interaction: the ordering of F2 levels reverses across F1 → effect of F1 depends heavily on F2","C) Main effects are zero","D) Data are missing"],correct:1,explain:"Crossing lines = reversal = strong qualitative interaction. Main effects are meaningless on their own here."},
+      {q:"An ANOVA table shows F1 df=2, Residuals df=57. How many total observations were there?",options:["A) 57","B) 60 (df_total = df_factors + df_residual = 2 + df_F2... assume total df = N−1)","C) Cannot tell from this info alone","D) 2"],correct:2,explain:"You need the complete df breakdown of every factor. Given only F1 and Residuals, you cannot recover N without the other factor's df."}
+    ],
+    prof: [
+      {q:"Two-way ANOVA is used to analyze:",options:["A) One categorical variable","B) Two categorical variables","C) One continuous variable","D) Two continuous variables"],correct:1,explain:"Two-way ANOVA studies the effect of TWO categorical factors on a continuous response."},
+      {q:"The dependent variable in ANOVA must be:",options:["A) Categorical","B) Binary","C) Continuous","D) Ordinal"],correct:2,explain:"ANOVA requires a continuous response variable."},
+      {q:"Independent variables in two-way ANOVA are also called:",options:["A) Residuals","B) Factors","C) Responses","D) Outcomes"],correct:1,explain:"The categorical predictors are called factors."},
+      {q:"Each factor in ANOVA consists of:",options:["A) Coefficients","B) Levels","C) Residuals","D) Means"],correct:1,explain:"Factors have levels (categories)."},
+      {q:"The main effect of a factor refers to:",options:["A) Its interaction with another factor","B) Its independent effect on the response","C) Its variance","D) Its residuals"],correct:1,explain:"Individual impact of one factor, ignoring others."},
+      {q:"An interaction effect occurs when:",options:["A) Factors are independent","B) One factor affects the response differently at different levels of another factor","C) Variance is constant","D) Data is normally distributed"],correct:1,explain:"Interaction = effect of one factor depends on another."},
+      {q:"In a model with interaction, the equation includes:",options:["A) Only main effects","B) Only interaction terms","C) Main effects and interaction term","D) No predictors"],correct:2,explain:"The model includes both main effects and their interaction."},
+      {q:"If there is no interaction, the model assumes:",options:["A) Factors are dependent","B) Effects are additive","C) Effects are multiplicative","D) Data is categorical"],correct:1,explain:"Without interaction, effects are additive."},
+      {q:"A significant interaction implies:",options:["A) Main effects are irrelevant","B) Effects should be interpreted separately","C) Main effects depend on each other","D) Model is invalid"],correct:2,explain:"Interpretation must consider combined effects, not just main effects."},
+      {q:"In interaction plots, parallel lines indicate:",options:["A) Strong interaction","B) No interaction","C) Random noise","D) High variance"],correct:1,explain:"Parallel lines suggest no interaction."},
+      {q:"Non-parallel lines in an interaction plot suggest:",options:["A) No relationship","B) Interaction effect","C) Constant variance","D) Independence"],correct:1,explain:"Non-parallel lines indicate interaction between factors."},
+      {q:"The ANOVA F-test compares:",options:["A) Means only","B) Variance between groups vs within groups","C) Residuals only","D) Probabilities"],correct:1,explain:"Compares between-group variance to within-group variance."},
+      {q:"A large F-statistic indicates:",options:["A) No effect","B) Strong evidence against null hypothesis","C) Small sample size","D) High variance"],correct:1,explain:"A large F suggests significant differences between group means."},
+      {q:"The null hypothesis for a main effect is:",options:["A) All group means differ","B) At least one mean differs","C) All group means are equal","D) Interaction exists"],correct:2,explain:"H₀: no difference among group means."},
+      {q:"The null hypothesis for interaction is:",options:["A) Interaction exists","B) No interaction effect","C) Means differ","D) Variance is zero"],correct:1,explain:"H₀: no interaction between factors."},
+      {q:"Degrees of freedom in ANOVA depend on:",options:["A) Number of predictors and observations","B) Only sample size","C) Only number of groups","D) Only variance"],correct:0,explain:"They depend on sample size AND number of groups/factors."},
+      {q:"A p-value less than α indicates:",options:["A) Accept null hypothesis","B) Reject null hypothesis","C) Increase variance","D) Reduce sample size"],correct:1,explain:"p < α → reject H₀."},
+      {q:"ANOVA assumes:",options:["A) Non-normality","B) Independence, normality, equal variance","C) Only independence","D) Only normality"],correct:1,explain:"Key assumptions: normality, independence, homogeneity of variance."},
+      {q:"Homogeneity of variance means:",options:["A) Means are equal","B) Variances are equal across groups","C) Residuals are zero","D) Data is independent"],correct:1,explain:"Equal variance across groups."},
+      {q:"If assumptions are violated, results may be:",options:["A) More accurate","B) Unaffected","C) Unreliable","D) Deterministic"],correct:2,explain:"Violations can lead to incorrect conclusions."}
+    ]
+  },
+  logistic: {
+    name: "Logistic Regression",
+    base: [
+      {q:"Logistic regression's link function is:",options:["A) Identity","B) Logit: log(p/(1−p))","C) Log","D) Probit (always)"],correct:1,explain:"Logistic uses the logit link. Log is Poisson. Identity is linear. Probit is a different family."},
+      {q:"Correct R call for logistic regression:",options:["A) <code>lm(Y ~ X, data=d)</code>","B) <code>glm(Y ~ X, family=binomial, data=d)</code>","C) <code>glm(Y ~ X, family=poisson, data=d)</code>","D) <code>aov(Y ~ X)</code>"],correct:1,explain:"family=binomial gives logistic regression by default (logit link)."},
+      {q:"If β₁ = 0.4 in a logistic model, then exp(0.4) ≈ 1.49 is the:",options:["A) Probability of Y=1","B) Odds ratio: the odds of Y=1 multiply by 1.49 per 1-unit increase in X","C) Predicted count","D) Confidence interval width"],correct:1,explain:"In logistic, exp(coef) = odds ratio. It's NOT a probability or count."},
+      {q:"95% CI for an odds ratio is (0.84, 1.22). You conclude:",options:["A) The predictor is significant","B) CI contains 1 → predictor NOT significant at α=0.05","C) The predictor is a confounder","D) The test failed"],correct:1,explain:"For ORs, 1 = no effect. CI containing 1 ⇔ p > 0.05."},
+      {q:"<code>predict(fit, newdata)</code> WITHOUT specifying type gives:",options:["A) Probabilities","B) Log-odds (link scale) — this is the default and a common exam pitfall","C) Class labels","D) Odds ratios"],correct:1,explain:"Default type=\"link\" returns log-odds. For probabilities, you must pass type=\"response\"."},
+      {q:"The default classification threshold in logistic regression is:",options:["A) 0.05","B) 0.50 (can be tuned)","C) 1.00","D) 0.00"],correct:1,explain:"p ≥ 0.5 → 1, else 0. Lowering the threshold increases sensitivity (more Y=1 predictions)."},
+      {q:"Which is NOT a logistic regression assumption?",options:["A) Linearity between X and log-odds","B) Independence of observations","C) Normally distributed residuals","D) No severe multicollinearity"],correct:2,explain:"Logistic does NOT require normal residuals or homoscedasticity — those are linear-regression assumptions."},
+      {q:"The logit function is:",options:["A) p = exp(η)/(1+exp(η))","B) log(p/(1−p))","C) 1/p","D) √p"],correct:1,explain:"Logit maps probability (0,1) to all of ℝ. The inverse is the logistic/sigmoid: p = exp(η)/(1+exp(η))."},
+      {q:"Null deviance vs residual deviance:",options:["A) Null = best-fit model; Residual = intercept only","B) Null = intercept-only; Residual = with predictors; big DROP → predictors improve fit","C) They are always equal","D) Residual > null means overfit"],correct:1,explain:"Both measure lack of fit. A large drop indicates predictors add explanatory value."},
+      {q:"The Likelihood Ratio Test (LRT) for nested logistic models uses:",options:["A) <code>anova(fit1, fit2, test=\"F\")</code>","B) <code>anova(reduced, full, test=\"Chisq\")</code>","C) <code>t.test(fit1, fit2)</code>","D) <code>summary(fit)</code>"],correct:1,explain:"LRT uses χ² for GLMs: 2×(logLik_full − logLik_reduced) ~ χ²(Δdf)."},
+      {q:"Wald test vs. Likelihood Ratio Test for a single coefficient:",options:["A) Wald is always better","B) Both test the same null; LRT is generally preferred for small samples or extreme probabilities","C) They produce identical p-values","D) LRT is only for linear regression"],correct:1,explain:"Wald tests z² = (β/SE)². LRT compares likelihoods directly and is usually more accurate in small samples."},
+      {q:"AIC can compare:",options:["A) Only nested models","B) Any models fit to the same data (nested or non-nested); lower is better","C) Only linear regressions","D) Only Poisson regressions"],correct:1,explain:"AIC requires the same dataset but does NOT require nesting. LRT requires nested models."},
+      {q:"A confusion matrix has TP=40, TN=300, FP=20, FN=10. Accuracy is:",options:["A) 85%","B) 91.9% ((40+300)/(40+300+20+10) = 340/370)","C) 80%","D) Cannot compute"],correct:1,explain:"Accuracy = (TP+TN)/total = 340/370 ≈ 0.919."},
+      {q:"In that same confusion matrix, sensitivity is:",options:["A) TP/(TP+FP) = 40/60 ≈ 0.667","B) TP/(TP+FN) = 40/50 = 0.80","C) TN/(TN+FP) = 300/320","D) FP/(FP+TN)"],correct:1,explain:"Sensitivity = true positive rate = TP/(TP+FN). Catches proportion of actual positives."},
+      {q:"Specificity in the same matrix is:",options:["A) 0.667","B) 0.80","C) TN/(TN+FP) = 300/320 = 0.9375","D) 0.50"],correct:2,explain:"Specificity = TN/(TN+FP) = true negative rate."},
+      {q:"The ROC curve plots:",options:["A) Accuracy vs threshold","B) Sensitivity (y) vs 1 − Specificity (x), traced over all thresholds","C) FP vs FN counts","D) β vs SE"],correct:1,explain:"ROC = TPR vs FPR. AUC summarizes it; 0.5 = random, 1.0 = perfect."},
+      {q:"AUC = 0.82 means:",options:["A) The model is wrong 82% of the time","B) For a random positive and random negative, the model scores the positive higher 82% of the time (good discrimination)","C) 82% of predictions are correct","D) Threshold must be 0.82"],correct:1,explain:"AUC = P(score_positive > score_negative). >0.8 = good; 0.7-0.8 fair; 0.5 random."},
+      {q:"Given β₀=−1, β₁=0.5, X=4 → η = 1. The predicted probability is:",options:["A) 0.27","B) 0.50","C) exp(1)/(1+exp(1)) ≈ 0.731","D) 1.0"],correct:2,explain:"p = exp(1)/(1+exp(1)) = 2.718/3.718 ≈ 0.731 → predict class 1 at threshold 0.5."},
+      {q:"Odds ratio of 0.4 for a predictor means:",options:["A) 40% increase in odds","B) Odds are MULTIPLIED by 0.4 per 1-unit increase → a 60% reduction in odds","C) Probability drops by 0.4","D) Not interpretable"],correct:1,explain:"OR < 1 ⇒ odds decrease. OR=0.4 ⇒ (1−0.4)=0.6 = 60% reduction in odds per unit X."},
+      {q:"Before logistic modeling, the binary response Y should:",options:["A) Be left as numeric 0/1 ONLY","B) Ideally be factored (<code>factor(Y)</code>) so R treats levels consistently — either is acceptable but factoring makes the reference level explicit","C) Be standardized","D) Be log-transformed"],correct:1,explain:"Both factored and numeric 0/1 work. Factor form makes the reference level (0) obvious."}
+    ],
+    bonus: [
+      {q:"Coefficients β₀=−4, β₁(hours)=1.5. For a student with 3 hours, what is the predicted probability of passing?",options:["A) 0.23","B) exp(0.5)/(1+exp(0.5)) ≈ 0.62","C) 0.50","D) 0.95"],correct:1,explain:"η = −4 + 1.5(3) = 0.5; p = e^0.5/(1+e^0.5) ≈ 0.62."},
+      {q:"Confusion matrix: Pred0/Actual0=180, Pred0/Actual1=30, Pred1/Actual0=20, Pred1/Actual1=70. Sensitivity?",options:["A) 0.70","B) TP/(TP+FN) = 70/100 = 0.70","C) 0.90","D) 0.50"],correct:1,explain:"Sensitivity = TP/(TP+FN). TP=70 (pred1, act1), FN=30 (pred0, act1). 70/(70+30) = 0.70."},
+      {q:"Model A: AUC=0.91. Model B: AUC=0.74. Model C: AUC=0.55. Choose the best:",options:["A) Model C","B) Model A (highest AUC = best discrimination)","C) Model B","D) Tie between A and B"],correct:1,explain:"Higher AUC = better class separation. A>B>C. Note AUC is threshold-independent."},
+      {q:"Output: OR for smoker = 2.75 (95% CI: 1.80, 4.20), p<0.001. Conclude:",options:["A) Smoking has no effect","B) Smokers have ~2.75× higher odds of the outcome; CI excludes 1, highly significant","C) Smoking reduces the outcome","D) OR cannot be interpreted"],correct:1,explain:"OR > 1 and CI excludes 1 → significant positive association."},
+      {q:"Null dev=450, Residual dev=187, Δdf=2. LRT statistic and conclusion:",options:["A) LRT = 187; p ≈ 1","B) LRT = 450 − 187 = 263 on 2 df → p ≈ 0 (predictors jointly highly significant)","C) LRT cannot be computed","D) LRT = 0"],correct:1,explain:"LRT = null_dev − res_dev on Δdf. 263 on 2 df is astronomically significant (χ²)."}
+    ],
+    prof: [
+      {q:"Logistic regression is used when the response variable is:",options:["A) Continuous","B) Count-based","C) Binary","D) Time-dependent"],correct:2,explain:"Used when the outcome is binary (0/1, yes/no)."},
+      {q:"The output of logistic regression represents:",options:["A) Raw values","B) Probabilities","C) Counts","D) Residuals"],correct:1,explain:"It models the probability of an event occurring."},
+      {q:"Why can't we use linear regression for binary outcomes?",options:["A) Too many variables","B) Predictions can fall outside [0,1]","C) It is too slow","D) It requires normalization"],correct:1,explain:"Linear regression may produce invalid probabilities (<0 or >1)."},
+      {q:"Logistic regression uses which function to map values to probabilities?",options:["A) Linear function","B) Exponential function","C) Logistic (sigmoid) function","D) Square function"],correct:2,explain:"The sigmoid function maps values to the range (0,1)."},
+      {q:"The logistic function has what shape?",options:["A) Linear","B) U-shaped","C) S-shaped","D) Exponential"],correct:2,explain:"The sigmoid curve is S-shaped, transitioning smoothly between 0 and 1."},
+      {q:"The logit transformation is:",options:["A) log(p)","B) log(1 − p)","C) log(p / (1 − p))","D) p / (1 − p)"],correct:2,explain:"The logit is the log of the odds."},
+      {q:"Logistic regression models:",options:["A) Probability directly","B) Log odds of probability","C) Variance","D) Residuals"],correct:1,explain:"Models log odds (logit) as a linear function of predictors."},
+      {q:"The logistic regression equation is:",options:["A) p = β0 + β1X","B) log(p) = β0 + β1X","C) log(p / (1 − p)) = β0 + β1X","D) p² = β0 + β1X"],correct:2,explain:"Logit model form."},
+      {q:"Odds are defined as:",options:["A) p²","B) p − 1","C) p / (1 − p)","D) 1 − p"],correct:2,explain:"Odds compare the probability of success to failure."},
+      {q:"If p = 0.8, the odds are:",options:["A) 0.25","B) 0.8","C) 4","D) 5"],correct:2,explain:"Odds = 0.8 / 0.2 = 4."},
+      {q:"exp(β) in logistic regression represents:",options:["A) Probability","B) Variance","C) Odds ratio","D) Residual"],correct:2,explain:"exp(β) gives the multiplicative change in odds."},
+      {q:"If exp(β) = 2, the odds:",options:["A) Double","B) Halve","C) Stay the same","D) Become zero"],correct:0,explain:"Odds are multiplied by 2."},
+      {q:"If exp(β) = 0.5, the odds:",options:["A) Double","B) Halve","C) Stay the same","D) Increase"],correct:1,explain:"Odds are reduced by half."},
+      {q:"Logistic regression coefficients are estimated using:",options:["A) Least squares","B) Maximum likelihood estimation","C) Gradient descent only","D) PCA"],correct:1,explain:"The model is fit using MLE."},
+      {q:"The likelihood function represents:",options:["A) Error","B) Distance","C) Probability of observed data given parameters","D) Variance"],correct:2,explain:"Likelihood measures how well parameters explain the data."},
+      {q:"The deviance in logistic regression measures:",options:["A) Accuracy","B) Distance between models","C) Model fit (similar to RSS)","D) Variance"],correct:2,explain:"Deviance is analogous to RSS for logistic models."},
+      {q:"Lower deviance indicates:",options:["A) Worse model","B) Better model fit","C) Larger variance","D) Overfitting"],correct:1,explain:"Lower deviance → better fit to data."},
+      {q:"A confusion matrix is used to evaluate:",options:["A) Regression models","B) Classification performance","C) Variance","D) Correlation"],correct:1,explain:"Summarizes prediction vs actual classifications."},
+      {q:"Accuracy is defined as:",options:["A) TP / FP","B) (TP + TN) / Total","C) FP / Total","D) FN / Total"],correct:1,explain:"Correct predictions / total predictions."},
+      {q:"A key limitation of logistic regression is:",options:["A) Cannot handle binary data","B) Assumes linear relationship in log odds","C) Requires large variance","D) Cannot estimate probabilities"],correct:1,explain:"Assumes linear relationship between predictors and log odds."}
+    ]
+  },
+  poisson: {
+    name: "Poisson Regression",
+    base: [
+      {q:"Poisson regression uses which link function?",options:["A) Identity","B) Logit","C) Log: log(μ) = β₀ + β₁X","D) Probit"],correct:2,explain:"Log link ensures predicted μ > 0, appropriate for counts."},
+      {q:"Correct R call:",options:["A) <code>lm(Y ~ X)</code>","B) <code>glm(Y ~ X, family=binomial)</code>","C) <code>glm(Y ~ X, family=poisson, data=d)</code>","D) <code>aov(Y ~ X)</code>"],correct:2,explain:"family=poisson uses the log link by default."},
+      {q:"exp(β) in Poisson regression is called the:",options:["A) Odds Ratio","B) Incidence Rate Ratio (IRR) — the multiplicative change in expected count per unit X","C) Hazard Ratio","D) Prior probability"],correct:1,explain:"OR = logistic. IRR = Poisson. HR = Cox. Don't confuse them on the exam."},
+      {q:"Residual deviance = 980, df = 200. What does this suggest?",options:["A) The model fits perfectly","B) Deviance/df = 4.9, much greater than 1 → overdispersion","C) Underdispersion","D) Nothing — deviance is meaningless"],correct:1,explain:"Poisson assumes equidispersion (Var=Mean ⇒ deviance/df ≈ 1). Ratio ≫ 1 suggests overdispersion."},
+      {q:"When you refit with <code>family=quasipoisson</code>, what changes?",options:["A) Coefficient estimates and SEs both change","B) Coefficients stay the SAME; SEs are inflated by √φ; p-values are larger","C) Link function switches to identity","D) Nothing"],correct:1,explain:"Quasi-Poisson estimates a dispersion parameter φ and scales SEs. Point estimates identical to Poisson."},
+      {q:"When overdispersion is severe or structural (e.g., unobserved heterogeneity), prefer:",options:["A) Linear regression","B) Negative Binomial: <code>glm.nb(Y ~ X)</code> from MASS","C) Logistic regression","D) Wilcoxon test"],correct:1,explain:"NB adds a dispersion parameter to the variance function, accommodating heavier tails than Poisson."},
+      {q:"An offset <code>offset(log(exposure))</code> is used to:",options:["A) Standardize Y","B) Model a RATE: count per unit exposure (time, population). Its coefficient is fixed at 1 (not estimated)","C) Force a specific intercept","D) Drop a predictor"],correct:1,explain:"Offsets convert count models to rate models by accounting for exposure."},
+      {q:"If <code>years</code> is the offset, exp(β) for a predictor is:",options:["A) The odds ratio","B) The rate ratio per unit X — ratio of counts-per-year for a one-unit change in X","C) The probability","D) A mean"],correct:1,explain:"With log(exposure) offset, exp(coef) multiplies the RATE (count per unit exposure), not the count itself."},
+      {q:"The key Poisson distributional assumption is:",options:["A) E(Y) = Var(Y) (equidispersion)","B) Y is normal","C) Y is bounded in [0,1]","D) Residuals are independent of fitted values only"],correct:0,explain:"Poisson assumes mean equals variance. If Var > Mean, overdispersion; if Var < Mean (rare), underdispersion."},
+      {q:"β₁ = 0.2 in Poisson → IRR = exp(0.2) ≈ 1.22. Interpretation:",options:["A) Count increases by 0.2","B) Count increases by ~22% per 1-unit increase in X (multiplicative)","C) Odds increase by 22%","D) Not interpretable"],correct:1,explain:"Percent change in expected count = (IRR−1)×100% = 22%."},
+      {q:"<code>predict(fit, newdata, type=\"response\")</code> in Poisson returns:",options:["A) Log-count","B) Predicted COUNT (μ)","C) Probabilities","D) Log-odds"],correct:1,explain:"type=\"response\" applies the inverse link (exp). For Poisson that gives μ directly."},
+      {q:"Why does Poisson use log link rather than identity?",options:["A) Speed of computation","B) log link guarantees μ > 0; identity can yield negative counts","C) Log link is additive in X","D) No particular reason"],correct:1,explain:"Counts must be non-negative; exp() ensures that."},
+      {q:"A goodness-of-fit check is:",options:["A) <code>1 − pchisq(deviance, df)</code>; p > 0.05 suggests adequate fit","B) R²","C) AUC","D) Wilcoxon test"],correct:0,explain:"Under a well-fitting Poisson, residual deviance ~ χ²(df). Large p-value → no evidence of lack of fit."},
+      {q:"AIC compares Poisson models by:",options:["A) The number of observations","B) Log-likelihood penalized by 2k (parameters); lower is better","C) Squared residuals","D) R²"],correct:1,explain:"AIC = −2 log-lik + 2k. Same rule for Poisson, logistic, and linear models."},
+      {q:"Which response type is INAPPROPRIATE for Poisson regression?",options:["A) Number of accidents per month","B) A binary pass/fail variable","C) Count of emails received","D) Crimes reported per region"],correct:1,explain:"Binary outcomes belong in logistic regression. Poisson is for counts (0,1,2,…)."},
+      {q:"Common cause of overdispersion:",options:["A) Unobserved heterogeneity or clustering/correlated events","B) Too many observations","C) A very small sample","D) Categorical predictors"],correct:0,explain:"If subjects differ in unobserved ways, variability exceeds what the Poisson model allows."},
+      {q:"Quasi-Poisson vs Negative Binomial:",options:["A) They are identical","B) Quasi keeps Poisson mean/variance ratio but inflates SEs; NB reparameterizes the variance function (Var = μ + θμ²) — NB is likelihood-based while quasi is quasi-likelihood","C) Only NB provides predictions","D) Quasi cannot handle overdispersion"],correct:1,explain:"Both handle overdispersion but via different mechanisms. NB has a proper likelihood; quasi is quasi-likelihood."},
+      {q:"glm.nb() is located in which R package?",options:["A) stats (base)","B) MASS","C) glmnet","D) dplyr"],correct:1,explain:"library(MASS); glm.nb(...). Same formula interface as glm."},
+      {q:"Linear vs Logistic vs Poisson, the Y type:",options:["A) continuous / binary / count","B) continuous / count / binary","C) binary / continuous / continuous","D) count / count / count"],correct:0,explain:"lm → continuous. glm(binomial) → binary. glm(poisson) → count."},
+      {q:"If counts are all small (e.g., 0,1,2) with zero-inflation, which model is a better starting point than plain Poisson?",options:["A) Linear regression","B) Zero-inflated Poisson or Negative Binomial","C) Logistic with threshold 0.5","D) Wilcoxon"],correct:1,explain:"Excess zeros violate Poisson. ZIP/ZINB models are designed for that pattern."}
+    ],
+    bonus: [
+      {q:"Output: β_age = −0.028, SE=0.006. IRR for age and interpretation:",options:["A) IRR = 0.028; count decreases by 0.028 per year","B) IRR = exp(−0.028) ≈ 0.972; each extra year is associated with ~2.8% FEWER counts, holding others constant","C) IRR = −0.028","D) Cannot compute without deviance"],correct:1,explain:"IRR = exp(coef). exp(−0.028) ≈ 0.972 → 2.8% decrease per year."},
+      {q:"Residual deviance=246 on df=98. What's the dispersion ratio and conclusion?",options:["A) 2.51 → overdispersion; consider quasi-Poisson or NB","B) 0.40 → underdispersion","C) 1.0 → equidispersion","D) Cannot tell"],correct:0,explain:"246/98 ≈ 2.51, well above 1. Indicates overdispersion."},
+      {q:"<code>glm(claims ~ X + offset(log(years)), family=poisson)</code> produces IRR_X = 1.15. Interpretation:",options:["A) Count of claims rises by 15% per unit X","B) Claims-per-YEAR rises by 15% per unit X (the offset converts it to a rate)","C) Probability of claim = 0.15","D) 15% increase in years"],correct:1,explain:"With log(years) offset, exp(coef) is the RATE ratio (per year)."},
+      {q:"<code>predict(fit, data.frame(X=5), type=\"response\")</code> returns 4.2. This is:",options:["A) A probability","B) The predicted COUNT (μ) at X=5","C) A log-count","D) An odds ratio"],correct:1,explain:"type=\"response\" returns predictions on the response scale = expected count."},
+      {q:"AIC_Poisson = 2150, AIC_NB = 1960, AIC_QP unavailable (quasi has no AIC). Prefer which?",options:["A) Poisson","B) Negative Binomial (lower AIC, explicit likelihood)","C) Quasi-Poisson","D) They are equivalent"],correct:1,explain:"Lower AIC = better (NB here). Quasi-Poisson uses quasi-likelihood, no AIC available."}
+    ],
+    prof: [
+      {q:"What does the Poisson distribution model?",options:["A) Continuous outcomes","B) Binary outcomes","C) Count of events in a fixed interval","D) Proportions"],correct:2,explain:"The Poisson distribution models the number of events occurring in a fixed interval of time or space."},
+      {q:"The Poisson distribution is characterized by how many parameters?",options:["A) 0","B) 1","C) 2","D) 3"],correct:1,explain:"It has a single parameter (μ or λ), the mean rate of events."},
+      {q:"In a Poisson distribution, the mean is equal to:",options:["A) 0","B) Variance","C) Standard deviation","D) Median"],correct:1,explain:"Mean = Variance (equidispersion)."},
+      {q:"What is the variance of a Poisson distribution?",options:["A) μ²","B) √μ","C) μ","D) 1"],correct:2,explain:"Var(Y) = μ."},
+      {q:"The condition Var(Y) = E(Y) is called:",options:["A) Normality","B) Linearity","C) Equidispersion","D) Independence"],correct:2,explain:"Defining feature of Poisson."},
+      {q:"As the mean increases, the Poisson distribution becomes:",options:["A) More skewed","B) More uniform","C) More symmetric and normal-like","D) More discrete"],correct:2,explain:"With larger μ, approaches normality."},
+      {q:"Poisson regression is mainly used for:",options:["A) Continuous data","B) Binary data","C) Count data","D) Time series data"],correct:2,explain:"Models count outcomes, like number of events."},
+      {q:"In Poisson regression, the response variable follows:",options:["A) Normal distribution","B) Binomial distribution","C) Poisson distribution","D) Uniform distribution"],correct:2,explain:"Y | X ~ Poisson(μ)."},
+      {q:"What is the link function used in Poisson regression?",options:["A) Identity","B) Log","C) Logit","D) Square root"],correct:1,explain:"Log link connects predictors to the mean."},
+      {q:"Why is the log link used in Poisson regression?",options:["A) To linearize data","B) To ensure positive predictions","C) To reduce variance","D) To normalize errors"],correct:1,explain:"Since μ must be positive, log ensures predictions stay positive."},
+      {q:"The Poisson regression model is expressed as:",options:["A) μ = β0 + β1X","B) log(μ) = β0 + β1X","C) μ² = β0 + β1X","D) log(X) = β0 + β1μ"],correct:1,explain:"log(μ) = β0 + β1X + …"},
+      {q:"The expected count μ can be written as:",options:["A) μ = β0 + β1X","B) μ = log(β0 + β1X)","C) μ = exp(β0 + β1X)","D) μ = X/β"],correct:2,explain:"Exponentiating gives μ = exp(linear predictor)."},
+      {q:"A one-unit increase in a predictor changes log(μ) by:",options:["A) μ","B) β","C) exp(β)","D) 1"],correct:1,explain:"β is the change in log(μ)."},
+      {q:"exp(βj) is interpreted as:",options:["A) Mean difference","B) Variance","C) Incidence Rate Ratio (IRR)","D) Probability"],correct:2,explain:"Multiplicative change in expected count."},
+      {q:"If exp(β) = 1.20, the expected count:",options:["A) Decreases by 20%","B) Increases by 20%","C) Increases by 120%","D) Stays the same"],correct:1,explain:"20% increase in expected count."},
+      {q:"If exp(β) = 0.80, the expected count:",options:["A) Increases by 80%","B) Decreases by 20%","C) Decreases by 80%","D) Does not change"],correct:1,explain:"20% decrease in expected count."},
+      {q:"Poisson regression coefficients are typically estimated using:",options:["A) Least squares","B) Gradient descent","C) Maximum likelihood estimation (MLE)","D) Bayesian inference"],correct:2,explain:"Fit using MLE."},
+      {q:"Which of the following is a key assumption of Poisson regression?",options:["A) Linearity in Y","B) Constant variance unrelated to mean","C) Variance equals mean","D) Normally distributed errors"],correct:2,explain:"Equidispersion is central."},
+      {q:"Residual deviance divided by degrees of freedom should be approximately:",options:["A) 0","B) 1","C) μ","D) n"],correct:1,explain:"For a well-fit model, deviance/df ≈ 1."},
+      {q:"If deviance/df is much greater than 1, this indicates:",options:["A) Perfect fit","B) Underfitting","C) Overdispersion","D) Multicollinearity"],correct:2,explain:"Variance > mean, i.e., overdispersion."}
+    ]
+  },
+  nonparam: {
+    name: "Non-Parametric Tests",
+    base: [
+      {q:"Appropriate non-parametric test for two INDEPENDENT groups:",options:["A) Wilcoxon Signed-Rank","B) Wilcoxon Rank-Sum (also known as Mann-Whitney U)","C) Paired t-test","D) Kruskal-Wallis"],correct:1,explain:"Rank-Sum = Mann-Whitney for 2 independent groups. Signed-Rank is for PAIRED data."},
+      {q:"Wilcoxon Rank-Sum is equivalent to:",options:["A) Paired t-test","B) Mann-Whitney U (two names, same test)","C) Friedman","D) Kruskal-Wallis"],correct:1,explain:"Rank-Sum and Mann-Whitney are synonyms. Watch out on exams."},
+      {q:"Use Kruskal-Wallis when you have:",options:["A) Two groups and normal data","B) 3+ INDEPENDENT groups, non-normal data; non-parametric alternative to one-way ANOVA","C) Paired data","D) A count response"],correct:1,explain:"KW generalizes Rank-Sum to 3+ groups. Do not use for 2 groups (use Rank-Sum)."},
+      {q:"Wilcoxon Signed-Rank is used for:",options:["A) Two INDEPENDENT samples","B) PAIRED / matched data — analogue of paired t-test","C) 3+ independent groups","D) Proportions"],correct:1,explain:"Signed-Rank: paired=TRUE in wilcox.test(). Tests median of the differences."},
+      {q:"Pairwise post-hoc after a significant Kruskal-Wallis, correcting for multiple tests:",options:["A) <code>pairwise.t.test(y, g)</code>","B) <code>pairwise.wilcox.test(y, g, p.adjust.method=\"bonferroni\")</code>","C) TukeyHSD()","D) kruskal.test()"],correct:1,explain:"pairwise.wilcox.test with a p-adjust method controls family-wise error."},
+      {q:"Non-parametric tests are based on:",options:["A) Normal likelihood","B) RANKS of the data, so they don't require a specific distributional form","C) Only sample means","D) Proportions"],correct:1,explain:"Ranks discard magnitudes and rely only on ordering, making them distribution-free."},
+      {q:"When the data are approximately normal and variances are equal:",options:["A) Non-parametric tests are always more powerful","B) Parametric tests (t, ANOVA) are MORE powerful; non-parametric is a safer fallback when assumptions fail","C) Non-parametric tests give smaller p-values","D) They are identical"],correct:1,explain:"Parametric tests use more info (values, not just ranks). Under their assumptions, they have higher power."},
+      {q:"The Bonferroni correction multiplies each p-value by:",options:["A) The sample size","B) The number of comparisons","C) 1.96","D) The F-statistic"],correct:1,explain:"Most conservative correction. Controls family-wise type I error at α."},
+      {q:"Decision tree for 2 groups: NORMAL data, PAIRED →",options:["A) Wilcoxon Rank-Sum","B) Paired t-test","C) Kruskal-Wallis","D) Signed-Rank"],correct:1,explain:"Normal + Paired → paired t-test (parametric is more powerful)."},
+      {q:"Decision tree: 3+ groups, NON-NORMAL →",options:["A) One-way ANOVA","B) Kruskal-Wallis + pairwise.wilcox.test","C) Multiple paired t-tests","D) Spearman correlation"],correct:1,explain:"KW + pairwise Wilcoxon (with p-adjust) is the non-parametric ANOVA workflow."},
+      {q:"<code>wilcox.test(A, B, alternative=\"greater\", paired=FALSE)</code> tests:",options:["A) H1: B > A","B) H1: A > B (location of A is greater than B)","C) Two-sided difference","D) Correlation"],correct:1,explain:"\"greater\" refers to the first argument compared to the second."},
+      {q:"Which test compares MEDIANS across groups (strictly under certain assumptions)?",options:["A) t-test (means)","B) Wilcoxon/Kruskal-Wallis (distributions; under symmetry assumption they compare medians)","C) Chi-square","D) ANOVA"],correct:1,explain:"Under a location-shift model with symmetric distributions, non-parametric rank tests compare medians."},
+      {q:"<code>wilcox.test(..., paired=TRUE)</code> becomes:",options:["A) Rank-Sum test","B) Signed-Rank test","C) Kruskal-Wallis","D) Chi-square"],correct:1,explain:"paired=TRUE switches to Wilcoxon Signed-Rank for paired data."},
+      {q:"Compared to t-tests, non-parametric tests are:",options:["A) Less robust","B) More robust to outliers and skewness, less sensitive to extreme values","C) Always higher power","D) Identical under all distributions"],correct:1,explain:"Rank-based methods cap the influence of extreme observations."},
+      {q:"With a small sample and obvious non-normality, the safer choice is:",options:["A) t-test","B) Non-parametric rank test","C) ANOVA","D) Regression"],correct:1,explain:"Small, non-normal samples violate parametric assumptions; rank tests avoid that issue."},
+      {q:"Post-hoc after ANOVA (parametric):",options:["A) TukeyHSD (controls family-wise error)","B) pairwise.wilcox.test","C) kruskal.test","D) t.test only"],correct:0,explain:"TukeyHSD is the standard ANOVA post-hoc; Wilcoxon-based post-hoc is for non-parametric workflows."},
+      {q:"Using a t-test when data are extremely skewed with outliers:",options:["A) Gives accurate p-values always","B) May produce misleading conclusions; rank tests are safer","C) Is always invalid","D) Equals a Wilcoxon test"],correct:1,explain:"Severe skew + outliers violate normality. T-tests can still be OK with large n (CLT), but rank tests are safer."},
+      {q:"The alternative argument accepts:",options:["A) \"two.sided\", \"greater\", or \"less\"","B) \"normal\" or \"non-normal\"","C) Only \"two.sided\"","D) A numeric effect size"],correct:0,explain:"These three are standard across wilcox.test, t.test, and cor.test."},
+      {q:"p.adjust.method options include:",options:["A) \"bonferroni\", \"holm\", \"BH\", \"fdr\"","B) \"parametric\"","C) \"identity\" only","D) \"mean\""],correct:0,explain:"Common methods: Bonferroni (conservative), Holm (step-down), BH/FDR (false discovery rate)."},
+      {q:"Why is it safer to default to non-parametric tests in practice?",options:["A) They always give smaller p-values","B) They rely on fewer assumptions, so their conclusions are less likely to be invalidated","C) They are faster","D) They have no α inflation"],correct:1,explain:"Trading some power for robustness is a reasonable default when assumptions are unclear."}
+    ],
+    bonus: [
+      {q:"<code>wilcox.test(A, B)</code> returns W=42, p=0.018. At α=0.05 you:",options:["A) Fail to reject H0","B) Reject H0: the two group distributions differ significantly","C) Cannot conclude","D) Accept H0"],correct:1,explain:"p < α → reject H0 of equal distributions (two-sided by default)."},
+      {q:"<code>kruskal.test(y ~ g)</code> p=0.003 across 4 groups. Next step:",options:["A) Stop — main test is enough","B) Run <code>pairwise.wilcox.test(y, g, p.adjust.method=\"bonferroni\")</code> to find which groups differ","C) Switch to ANOVA","D) Remove outliers"],correct:1,explain:"Significant KW → follow up with adjusted pairwise Wilcoxon comparisons."},
+      {q:"pairwise.wilcox.test output:\n   A    B    C\nB 0.02 -    -\nC 0.40 0.03 -\nWhich pairs differ at α=0.05?",options:["A) A-B, A-C, B-C","B) A-B and B-C","C) Only A-C","D) None"],correct:1,explain:"Adjusted p-values < 0.05 are A-B (0.02) and B-C (0.03). A-C is not significant (0.40)."},
+      {q:"You have PAIRED non-normal data (before/after). Choose:",options:["A) Rank-Sum (paired=FALSE)","B) Signed-Rank: <code>wilcox.test(before, after, paired=TRUE)</code>","C) Kruskal-Wallis","D) T-test"],correct:1,explain:"Paired + non-normal → Wilcoxon Signed-Rank."},
+      {q:"You have 5 independent groups and data appear normal with equal variance. Choose:",options:["A) Kruskal-Wallis","B) One-way ANOVA, then TukeyHSD","C) Multiple paired t-tests","D) Signed-Rank"],correct:1,explain:"Normal + independent + ≥2 groups → parametric ANOVA with TukeyHSD for post-hoc."}
+    ],
+    prof: [
+      {q:"Nonparametric tests are used when:",options:["A) Data is always normal","B) Strong distribution assumptions hold","C) Data do not meet parametric assumptions","D) Sample size is very large"],correct:2,explain:"Used when assumptions like normality are violated."},
+      {q:"Nonparametric tests are typically based on:",options:["A) Means","B) Variances","C) Ranks","D) Probabilities"],correct:2,explain:"Most nonparametric tests use ranked data."},
+      {q:"Nonparametric tests are especially useful for:",options:["A) Large samples only","B) Ordinal or skewed data","C) Perfectly normal data","D) Continuous symmetric data only"],correct:1,explain:"Ideal for ordinal, skewed, or small-sample data."},
+      {q:"The one-sample Wilcoxon signed rank test is used to test:",options:["A) Mean equals μ₀","B) Median equals m₀","C) Variance equals σ²","D) Proportion equals p"],correct:1,explain:"Tests whether the population median equals a specified value."},
+      {q:"The Wilcoxon signed rank test is an alternative to:",options:["A) Two-sample t-test","B) One-sample t-test","C) ANOVA","D) Chi-square test"],correct:1,explain:"Replaces the one-sample t-test when assumptions fail."},
+      {q:"In the Wilcoxon test, zero differences are:",options:["A) Ranked highest","B) Included normally","C) Discarded","D) Doubled"],correct:2,explain:"Zero-difference observations are removed before ranking."},
+      {q:"The Wilcoxon test statistic W is:",options:["A) Sum of all ranks","B) Sum of negative ranks","C) Sum of positive signed ranks","D) Difference of means"],correct:2,explain:"W = sum of positive signed ranks."},
+      {q:"For large samples, the Wilcoxon statistic is approximated by:",options:["A) Uniform distribution","B) Poisson distribution","C) Normal distribution","D) Binomial distribution"],correct:2,explain:"With large n, W ≈ normal."},
+      {q:"The Mann–Whitney U test is used to compare:",options:["A) Paired samples","B) One sample","C) Two independent samples","D) Three samples"],correct:2,explain:"Compares two independent groups."},
+      {q:"The Mann–Whitney test is an alternative to:",options:["A) Paired t-test","B) One-sample t-test","C) Two-sample t-test","D) ANOVA"],correct:2,explain:"Replaces the independent two-sample t-test."},
+      {q:"The Mann–Whitney test evaluates differences in:",options:["A) Means","B) Variance","C) Distribution location","D) Correlation"],correct:2,explain:"Tests whether distributions differ in location."},
+      {q:"In the Mann–Whitney test, data are first:",options:["A) Averaged","B) Standardized","C) Ranked together","D) Separated"],correct:2,explain:"All observations are pooled and ranked."},
+      {q:"The U statistic is based on:",options:["A) Means","B) Rank sums","C) Variance","D) Residuals"],correct:1,explain:"Calculated using rank sums of the samples."},
+      {q:"The Wilcoxon signed rank test for paired data tests:",options:["A) Mean difference = 0","B) Median difference = 0","C) Variance difference = 0","D) Correlation = 0"],correct:1,explain:"Tests whether the median of paired differences is zero."},
+      {q:"The paired Wilcoxon test is equivalent to:",options:["A) Mann–Whitney test","B) One-sample Wilcoxon on differences","C) ANOVA","D) Regression"],correct:1,explain:"A one-sample test applied to differences."},
+      {q:"The Kruskal–Wallis test is used for:",options:["A) One sample","B) Two samples","C) Three or more independent samples","D) Paired samples"],correct:2,explain:"Compares k ≥ 3 independent groups."},
+      {q:"The Kruskal–Wallis test is an alternative to:",options:["A) Two-sample t-test","B) One-sample t-test","C) One-way ANOVA","D) Logistic regression"],correct:2,explain:"Replaces one-way ANOVA when assumptions fail."},
+      {q:"The null hypothesis in the Kruskal–Wallis test is:",options:["A) All means differ","B) All medians are equal","C) Variances are equal","D) Correlations are zero"],correct:1,explain:"H₀: All population medians are equal."},
+      {q:"A significant Kruskal–Wallis test indicates:",options:["A) All groups differ","B) At least one group differs","C) No difference","D) Equal variances"],correct:1,explain:"At least one median differs, but not which."},
+      {q:"Why are ranks used in nonparametric tests?",options:["A) To increase sample size","B) To reduce sensitivity to outliers and non-normality","C) To simplify formulas","D) To remove bias"],correct:1,explain:"Makes tests robust to outliers and skewed data."}
+    ]
+  },
+  power: {
+    name: "Power & Sample Size",
+    base: [
+      {q:"Statistical power is:",options:["A) P(Type I error)","B) P(reject H0 | H1 true) = 1 − β","C) The confidence level","D) The effect size"],correct:1,explain:"Power = probability of detecting a real effect. Target is usually 0.80."},
+      {q:"Cohen's d = 0.5 is conventionally called:",options:["A) Small","B) MEDIUM","C) Large","D) Negligible"],correct:1,explain:"Cohen's d: 0.2 small, 0.5 medium, 0.8 large."},
+      {q:"Cohen's f = 0.25 for ANOVA represents:",options:["A) Small","B) MEDIUM","C) Large","D) Negligible"],correct:1,explain:"Cohen's f: 0.1 small, 0.25 medium, 0.4 large."},
+      {q:"Cohen's f² for regression: 0.15 represents:",options:["A) Small","B) MEDIUM","C) Large","D) Negligible"],correct:1,explain:"f²: 0.02 small, 0.15 medium, 0.35 large. f² = R²/(1−R²)."},
+      {q:"Sample sizes returned by pwr functions should be:",options:["A) Rounded down","B) Rounded UP (ceiling), to ensure the target power is achieved","C) Left as decimals","D) Multiplied by 10"],correct:1,explain:"Rounding down would undercut the required power. Always ceiling()."},
+      {q:"<code>pwr.t.test(d=0.5, power=0.80, sig.level=0.05, type=\"two.sample\")</code> returns n=63.77. What does this mean?",options:["A) 63 total","B) 64 PER GROUP (n rounded up, balanced two-sample t)","C) 64 total","D) 128 per group"],correct:1,explain:"type=\"two.sample\" returns n per group. Ceiling to 64."},
+      {q:"<code>pwr.f2.test</code> uses u = ?",options:["A) Sample size","B) Numerator df = number of predictors being tested","C) Residual df","D) α"],correct:1,explain:"u = k (predictors tested). v = n − u − 1 (residual df)."},
+      {q:"f² formula from R²:",options:["A) f² = R² × (1 − R²)","B) f² = R² / (1 − R²)","C) f² = 1 − R²","D) f² = R² + 1"],correct:1,explain:"Cohen's f² = R²/(1 − R²). Used in pwr.f2.test."},
+      {q:"Default significance level in pwr functions:",options:["A) 0.01","B) 0.05","C) 0.10","D) 0.001"],correct:1,explain:"Convention. Always report both α and power used."},
+      {q:"Holding everything else constant, a LARGER effect size requires:",options:["A) Larger n for the same power","B) SMALLER n for the same power","C) No change","D) Higher α"],correct:1,explain:"Bigger effects are easier to detect; fewer observations needed."},
+      {q:"To solve for power instead of n in pwr functions:",options:["A) Set power=NULL and provide n","B) Set n=NULL and provide power","C) Set both to NULL","D) Use pwr.r.test only"],correct:0,explain:"Leave the unknown as NULL; supply the others."},
+      {q:"Effect size h for two proportions:",options:["A) h = p1 − p2","B) h = 2·arcsin(√p1) − 2·arcsin(√p2)","C) h = p1/p2","D) h = (p1−p2)²"],correct:1,explain:"Cohen's arcsine-transformed difference; used in pwr.2p.test."},
+      {q:"<code>pwr.r.test(r=0.3, power=0.80, sig.level=0.05)</code> solves for:",options:["A) r","B) n (sample size)","C) power","D) α"],correct:1,explain:"Only n is NULL in this call, so pwr.r.test solves for n."},
+      {q:"<code>pwr.anova.test</code> argument k refers to:",options:["A) Sample size per group","B) Number of GROUPS","C) Number of predictors","D) Variance"],correct:1,explain:"k = number of groups; n = per-group sample size (equal sizes assumed)."},
+      {q:"<code>pwr.chisq.test</code>: w is the:",options:["A) Number of rows","B) Cohen's effect size (w = √(χ²/N))","C) p-value","D) Degrees of freedom"],correct:1,explain:"Cohen's w: 0.1 small, 0.3 medium, 0.5 large."},
+      {q:"Type II error β relates to power by:",options:["A) β = α","B) β = 1 − power","C) β = power","D) β = n/α"],correct:1,explain:"Power = 1 − β. Targeting 80% power ⇒ β = 0.20."},
+      {q:"For a PAIRED t-test, the returned n is:",options:["A) Per group","B) Total pairs (each pair = 1 observation unit)","C) Twice the pairs","D) The number of pairs in each group"],correct:1,explain:"pwr.t.test type=\"paired\" returns number of pairs."},
+      {q:"Increasing α (less stringent, e.g., 0.05 → 0.10) affects power how?",options:["A) Power increases","B) Power decreases","C) No effect","D) Depends on n"],correct:0,explain:"A larger rejection region makes it easier to reject H0 when H1 is true, raising power. But α also inflates type I error."},
+      {q:"When no pilot data are available, default to Cohen's MEDIUM effect:",options:["A) d=1.0","B) d=0.5, f=0.25, f²=0.15, h=0.5, r=0.3, w=0.3","C) d=0.1","D) Custom effect"],correct:1,explain:"Commonly used convention for planning studies without prior estimates."},
+      {q:"Power curve: plotting power vs n while holding α and d fixed:",options:["A) Always decreases","B) Is a non-decreasing curve (power rises with n, asymptoting to 1)","C) Is a constant line","D) Starts at 1"],correct:1,explain:"More data → more power; the curve saturates near 1 for large n."}
+    ],
+    bonus: [
+      {q:"Your data: m1=52, m2=48, s1=10, s2=11. Two-sample Cohen's d:",options:["A) 4","B) |52−48|/√((10²+11²)/2) = 4/√110.5 ≈ 0.38","C) 0.10","D) 4/21"],correct:1,explain:"d_two = |m1−m2|/√((s1²+s2²)/2) ≈ 0.38 (small-to-medium)."},
+      {q:"<code>pwr.anova.test(k=3, f=0.25, sig.level=0.05, power=0.80)</code> returns n ≈ 52.3. Total sample size required:",options:["A) 52","B) 53 per group (ceiling) = 159 total","C) 52 total","D) 17 per group"],correct:1,explain:"Round up to 53 per group; 3 groups ⇒ 159 total."},
+      {q:"Your study has only n=20 per group, d=0.3. Likely power is:",options:["A) Above 80%","B) Well below 80% (small effect, small n → low power)","C) Exactly 50%","D) 100%"],correct:1,explain:"Small effect + small n ⇒ underpowered. Either increase n or accept higher Type II risk."},
+      {q:"p1 = 0.30, p2 = 0.50. Cohen's h:",options:["A) 0.20","B) h = 2·asin(√0.30) − 2·asin(√0.50) ≈ −0.412 (absolute value ~0.41 → medium)","C) 0.05","D) 0.00"],correct:1,explain:"Report |h|. Roughly medium (around 0.5)."},
+      {q:"<code>pwr.f2.test(u=3, f2=0.15, sig.level=0.05, power=0.80)</code> returns v ≈ 72.7. Sample size:",options:["A) 73","B) n = v + u + 1 ≈ 73 + 3 + 1 = 77 (ceiling)","C) 76","D) 72"],correct:1,explain:"For multiple regression with k=3 predictors tested: n = ceil(v) + u + 1 = 73 + 4 = 77."}
+    ],
+    prof: [
+      {q:"What is statistical power?",options:["A) Probability of a Type I error","B) Probability of rejecting a true null hypothesis","C) Probability of correctly rejecting a false null hypothesis","D) Sample size"],correct:2,explain:"Power = probability of detecting a true effect."},
+      {q:"Power is equal to:",options:["A) α","B) β","C) 1 − α","D) 1 − β"],correct:3,explain:"Power = 1 − β."},
+      {q:"A Type I error occurs when:",options:["A) You fail to reject a false null hypothesis","B) You reject a true null hypothesis","C) You reject a false null hypothesis","D) You accept the alternative hypothesis"],correct:1,explain:"Type I error = false positive."},
+      {q:"The significance level (α) represents:",options:["A) Probability of Type II error","B) Probability of correctly rejecting H₀","C) Probability of a Type I error","D) Effect size"],correct:2,explain:"α = probability of falsely rejecting the null hypothesis."},
+      {q:"Increasing the power of a test generally requires:",options:["A) Smaller sample size","B) Larger sample size","C) Lower variance only","D) Changing hypothesis"],correct:1,explain:"More data → more power."},
+      {q:"Effect size measures:",options:["A) Sample size","B) Strength of difference or relationship","C) Probability of error","D) Variance"],correct:1,explain:"Quantifies how large the effect is."},
+      {q:"For t-tests, a medium effect size (Cohen's d) is approximately:",options:["A) 0.1","B) 0.2","C) 0.5","D) 0.8"],correct:2,explain:"0.2 small, 0.5 medium, 0.8 large."},
+      {q:"A one-sample t-test is used to:",options:["A) Compare two independent groups","B) Compare paired observations","C) Compare a sample mean to a fixed value","D) Compare proportions"],correct:2,explain:"Tests whether a sample mean differs from a known value."},
+      {q:"A paired t-test is appropriate when:",options:["A) Groups are independent","B) Observations are related or matched","C) Data are categorical","D) Sample sizes are unequal"],correct:1,explain:"For dependent data (e.g., before/after)."},
+      {q:"In one-way ANOVA, the parameter k represents:",options:["A) Number of observations","B) Number of variables","C) Number of groups","D) Sample variance"],correct:2,explain:"k = number of groups being compared."}
+    ]
+  },
+  pca: {
+    name: "PCA & PCR",
+    base: [
+      {q:"<code>prcomp(X, center=TRUE, scale.=TRUE)</code> is important because:",options:["A) center alone is enough","B) Without scale.=TRUE, variables with larger numeric ranges dominate the PCs","C) scale.=TRUE removes NAs","D) It forces orthogonality"],correct:1,explain:"prcomp does NOT auto-scale. Variance-dominance from raw scale is the #1 PCA pitfall."},
+      {q:"PCA is:",options:["A) Supervised","B) UNSUPERVISED — uses only X, not Y","C) A classification method","D) A causal inference technique"],correct:1,explain:"PCA maximizes variance in X. It never uses Y, which is why PCR has a known weakness."},
+      {q:"The eigenvalue of a PC equals:",options:["A) Correlation with Y","B) VARIANCE captured by that PC","C) Number of variables","D) The loading sum"],correct:1,explain:"Eigenvalue = variance along the PC's direction. Sum of all eigenvalues = total variance."},
+      {q:"Loadings in PCA are:",options:["A) Weights that express each PC as a linear combination of original variables","B) p-values","C) Residuals","D) Data after scaling"],correct:0,explain:"pca$rotation gives loadings — the coefficients of original variables."},
+      {q:"Scores in PCA are:",options:["A) Eigenvalues","B) The observations projected onto the PC axes (pca$x)","C) Residuals from regression","D) p-values"],correct:1,explain:"Scores are the transformed coordinates of observations in PC space."},
+      {q:"A scree plot helps by:",options:["A) Showing the ELBOW where additional PCs add little variance","B) Testing normality","C) Replacing the biplot","D) Computing Y"],correct:0,explain:"Plot eigenvalues vs PC index and pick K at the elbow."},
+      {q:"Common cumulative-variance thresholds for choosing K:",options:["A) 0.50","B) 0.80–0.90","C) 0.99","D) 0.10"],correct:1,explain:"Retain enough PCs to capture 80–90% of total variance."},
+      {q:"Kaiser criterion says:",options:["A) Keep PCs with eigenvalue > 1","B) Keep PCs with eigenvalue < 1","C) Keep all PCs","D) Drop all PCs"],correct:0,explain:"On a standardized correlation matrix, average eigenvalue = 1. Keeping those above 1 retains above-average PCs."},
+      {q:"In a biplot, two variable arrows pointing in OPPOSITE directions mean:",options:["A) Uncorrelated","B) Positively correlated","C) NEGATIVELY correlated","D) Equal loadings"],correct:2,explain:"Same direction = positive; 90° = uncorrelated; opposite = negative."},
+      {q:"Two arrows at ~90° in a biplot indicate:",options:["A) Strong positive correlation","B) Approximately UNCORRELATED variables","C) Strong negative correlation","D) Missing data"],correct:1,explain:"Angle between arrows reflects correlation: cos(angle). 90° → cos=0 → uncorrelated."},
+      {q:"PCR differs from Ridge/Lasso in that:",options:["A) PCR is a 2-step method (PCA then OLS); Ridge/Lasso directly optimize for predicting Y","B) PCR handles categorical Y","C) PCR uses L1 penalty","D) They are identical"],correct:0,explain:"PCR selects components without regard to Y; Ridge/Lasso penalize coefficients while fitting Y."},
+      {q:"KEY limitation of PCR:",options:["A) It cannot run in R","B) PCs selected by variance in X may be unrelated to Y → may miss predictive information","C) PCR requires binary Y","D) PCR is only for p<n"],correct:1,explain:"This is the fundamental misalignment — unsupervised variance vs. supervised prediction."},
+      {q:"PCR with ncomp = p (all components) is equivalent to:",options:["A) Ridge regression","B) OLS — no dimensionality reduction benefit","C) A random model","D) Lasso"],correct:1,explain:"All PCs span the same space as the original predictors; the fit is the same as OLS."},
+      {q:"PCs are orthogonal, meaning:",options:["A) They have the same magnitude","B) They are UNCORRELATED, eliminating multicollinearity in PCR","C) They are missing","D) They are identical"],correct:1,explain:"Orthogonality ⇒ zero covariance. This is why PCR avoids multicollinearity."},
+      {q:"PCA addresses multicollinearity by:",options:["A) Dropping correlated variables","B) Replacing correlated predictors with uncorrelated components","C) Adding a penalty","D) Increasing sample size"],correct:1,explain:"Transformation to uncorrelated axes sidesteps the instability of correlated predictors."},
+      {q:"To find the most influential variables on PC1:",options:["A) Report the largest variance","B) Report variables with the largest |loading| in PC1","C) Use Y directly","D) Use R²"],correct:1,explain:"Sort |pca$rotation[,1]| in decreasing order."},
+      {q:"The first principal component (PC1) captures:",options:["A) Any arbitrary direction","B) The direction of MAX variance in the predictor space","C) The direction maximally correlated with Y","D) Errors"],correct:1,explain:"PC1 is the direction of max variance; PC2 is the direction of max variance orthogonal to PC1; and so on."},
+      {q:"<code>center=TRUE</code> in prcomp:",options:["A) Normalizes to unit variance","B) Subtracts the column means before decomposition","C) Rotates the data","D) Removes NA rows"],correct:1,explain:"Centering (mean-subtraction) is standard. Scale.=TRUE additionally divides by each column's SD."},
+      {q:"Which package has <code>pcr()</code> for Principal Component Regression?",options:["A) glmnet","B) pls","C) stats (base)","D) car"],correct:1,explain:"library(pls); pcr(Y ~ ., data=train, scale=TRUE, validation=\"CV\")."},
+      {q:"<code>validationplot(pcr_fit, val.type=\"MSEP\")</code> helps you:",options:["A) Check residual normality","B) Choose ncomp by visualizing CV prediction error vs # components","C) Fit OLS","D) Diagnose leverage"],correct:1,explain:"Pick the ncomp where MSEP begins to plateau or reaches its minimum."}
+    ],
+    bonus: [
+      {q:"prop. var explained:\nPC1=0.42  PC2=0.28  PC3=0.14  PC4=0.08  PC5=0.05\nCumulative:\nPC1=0.42  PC2=0.70  PC3=0.84  PC4=0.92  PC5=0.97\nHow many PCs at 80% threshold?",options:["A) 2","B) 3 (cumulative 0.84 first exceeds 0.80)","C) 4","D) 5"],correct:1,explain:"Retain the smallest k whose cumulative variance ≥ 0.80. Here k=3 gives 0.84."},
+      {q:"PC1 loadings: Height=0.52, Weight=0.48, Age=0.02, Income=0.05. PC1 primarily captures:",options:["A) Income","B) Body size (Height and Weight dominate)","C) Age","D) Error"],correct:1,explain:"Large |loadings| on Height and Weight with tiny loadings on Age/Income → a 'size' dimension."},
+      {q:"Scree plot shows a sharp elbow at PC3 then flat. You should retain:",options:["A) 1","B) ~3 components (elbow rule)","C) All","D) 0"],correct:1,explain:"Elbow at PC3 suggests the first 3 components capture most structure."},
+      {q:"MSEP curve bottoms out at ncomp = 7, fluctuates slightly, then rises. Choose ncomp:",options:["A) 1","B) 7 (minimum MSEP / plateau)","C) 20","D) 0"],correct:1,explain:"Pick ncomp at or near the minimum MSEP, balancing complexity and error."},
+      {q:"Biplot: Var A arrow at 0°, Var B arrow at 180°, Var C arrow at 90° (relative to A). Relationships?",options:["A) A-B uncorrelated; A-C positive","B) A-B strongly NEGATIVELY correlated; A-C approximately UNCORRELATED","C) A-B positive; B-C negative","D) All uncorrelated"],correct:1,explain:"180° = opposite direction = strong negative correlation. 90° = cos(90°)=0 = uncorrelated."}
+    ],
+    prof: [
+      {q:"What is the main purpose of PCA?",options:["A) Predict a response variable","B) Classify observations","C) Reduce dimensionality","D) Estimate probabilities"],correct:2,explain:"PCA reduces dimensionality while retaining important information."},
+      {q:"PCA is most useful when variables are:",options:["A) Independent","B) Binary","C) Highly correlated","D) Normally distributed"],correct:2,explain:"Designed to handle correlated variables and redundancy."},
+      {q:"Principal components are:",options:["A) Nonlinear transformations","B) Linear combinations of original variables","C) Subsets of variables","D) Residuals"],correct:1,explain:"Each PC is a linear combination of the original variables."},
+      {q:"Principal components are:",options:["A) Correlated","B) Independent and uncorrelated","C) Random","D) Binary"],correct:1,explain:"PCs are orthogonal (uncorrelated)."},
+      {q:"The first principal component (PC1) captures:",options:["A) Least variance","B) Mean","C) Maximum variance","D) Median"],correct:2,explain:"PC1 captures the largest variation in the data."},
+      {q:"The second principal component (PC2) must be:",options:["A) Larger than PC1","B) Correlated with PC1","C) Orthogonal to PC1","D) Equal to PC1"],correct:2,explain:"PC2 is uncorrelated with PC1."},
+      {q:"PCA finds directions that:",options:["A) Minimize variance","B) Maximize variance","C) Minimize error","D) Maximize correlation"],correct:1,explain:"Maximizes projected variance."},
+      {q:"The variance of projection onto direction a is:",options:["A) a^Ta","B) X^TX","C) a^T S a","D) Sa"],correct:2,explain:"Variance = a^T S a."},
+      {q:"PCA directions are given by:",options:["A) Regression coefficients","B) Eigenvectors","C) Residuals","D) Means"],correct:1,explain:"PCs are eigenvectors of the covariance/correlation matrix."},
+      {q:"The variance explained by each component is given by:",options:["A) Eigenvectors","B) Residuals","C) Eigenvalues","D) Means"],correct:2,explain:"Eigenvalues measure variance explained."},
+      {q:"Why is standardization important in PCA?",options:["A) To remove noise","B) To make variables independent","C) To prevent large-scale variables from dominating","D) To reduce sample size"],correct:2,explain:"Without it, high-variance variables dominate."},
+      {q:"After standardization, each variable has:",options:["A) Mean 1, variance 0","B) Mean 0, standard deviation 1","C) Mean 1, variance 1","D) Mean 0, variance 0"],correct:1,explain:"Standardization → mean = 0, SD = 1."},
+      {q:"A scree plot is used to:",options:["A) Fit regression models","B) Detect outliers","C) Determine number of components","D) Estimate coefficients"],correct:2,explain:"Identifies the elbow point for retaining components."},
+      {q:"The \"elbow\" in a scree plot indicates:",options:["A) Maximum variance","B) Optimal number of components","C) Minimum variance","D) Number of variables"],correct:1,explain:"After the elbow, additional components add little value."},
+      {q:"Loadings in PCA represent:",options:["A) Predictions","B) Errors","C) Coefficients of PCs","D) Variances"],correct:2,explain:"Loadings are weights of variables in each PC."},
+      {q:"Large absolute loadings indicate:",options:["A) Weak contribution","B) Strong contribution","C) No effect","D) Random effect"],correct:1,explain:"Strong influence on the component."},
+      {q:"A scores plot shows:",options:["A) Variable importance","B) Regression coefficients","C) Observations in PC space","D) Error terms"],correct:2,explain:"Plots observations using principal components."},
+      {q:"PCA is considered:",options:["A) Supervised learning","B) Unsupervised learning","C) Reinforcement learning","D) Classification"],correct:1,explain:"PCA does not use a response variable."},
+      {q:"PCR is used primarily to address:",options:["A) Missing data","B) Multicollinearity","C) Nonlinearity","D) Outliers"],correct:1,explain:"Handles correlated predictors via PCA transformation."},
+      {q:"A limitation of PCR is that components are selected based on:",options:["A) Prediction accuracy","B) Correlation with Y","C) Variance in predictors only","D) Sample size"],correct:2,explain:"PCR selects components based on explained variance in X, not predictive power for Y."}
+    ]
+  },
+  regularized: {
+    name: "Regularized Regression",
+    base: [
+      {q:"In glmnet, alpha=0 gives:",options:["A) Lasso","B) Ridge regression (L2 penalty)","C) Elastic Net","D) OLS"],correct:1,explain:"alpha=0 → Ridge; alpha=1 → Lasso; 0<alpha<1 → Elastic Net."},
+      {q:"In glmnet, alpha=1 gives:",options:["A) Lasso (L1 penalty, can set coefs to zero)","B) Ridge","C) Elastic Net","D) OLS"],correct:0,explain:"Lasso = L1 penalty. It performs variable selection."},
+      {q:"Which performs automatic variable selection?",options:["A) Ridge","B) Lasso (can set coefficients exactly to zero)","C) OLS","D) Any GLM"],correct:1,explain:"The L1 penalty produces exact zeros at corner solutions of the optimization."},
+      {q:"Ridge regression:",options:["A) Sets some coefs to zero","B) Shrinks all coefs toward 0 but NEVER exactly to zero (keeps all predictors)","C) Is equivalent to Lasso","D) Has no penalty"],correct:1,explain:"L2 penalty yields non-zero shrunken estimates; no variable selection."},
+      {q:"Elastic Net is useful when:",options:["A) Only 1 predictor matters","B) Predictors are correlated AND you want some sparsity; ENet keeps GROUPS of correlated predictors together","C) Data are normal","D) Y is binary"],correct:1,explain:"Combines L1 (select) and L2 (group) — helpful for correlated features."},
+      {q:"lambda.min vs lambda.1se from <code>cv.glmnet</code>:",options:["A) lambda.min = largest lambda; lambda.1se = smallest","B) lambda.min = minimum CV error; lambda.1se = largest lambda within 1 SE of min (simpler model)","C) They are identical","D) lambda.min is for Ridge only"],correct:1,explain:"lambda.1se trades a tiny bit of predictive error for a more parsimonious model."},
+      {q:"Regularization trades:",options:["A) Both bias and variance up","B) A small increase in bias for a large decrease in variance → lower test MSE","C) Only bias up, nothing else","D) Only variance up"],correct:1,explain:"MSE = bias² + variance. Regularization accepts slightly more bias in exchange for much less variance."},
+      {q:"L1 vs L2 penalty:",options:["A) L1 = sum(|βj|), can produce exact zeros; L2 = sum(βj²), produces continuous shrinkage","B) L1 and L2 are identical","C) L2 always gives sparser models","D) Neither penalizes large coefs"],correct:0,explain:"The geometry of the L1 ball creates corners where some β become exactly zero; L2's smooth ball doesn't."},
+      {q:"<code>cv.glmnet()</code> returns:",options:["A) Nothing useful","B) A sequence of lambdas + CV error per lambda + lambda.min & lambda.1se","C) OLS coefficients only","D) Predicted probabilities"],correct:1,explain:"Default K=10 CV over the lambda grid; the object stores everything needed."},
+      {q:"As lambda → 0, the solution approaches:",options:["A) All coefs zero","B) OLS estimates","C) Ridge with huge shrinkage","D) Lasso with max sparsity"],correct:1,explain:"No penalty → unregularized OLS."},
+      {q:"As lambda → ∞, Ridge coefficients:",options:["A) Blow up","B) Shrink toward 0 (but never exactly 0)","C) Stay constant","D) Become exactly 0"],correct:1,explain:"More penalty ⇒ more shrinkage. At ∞, predictions approach the mean of Y (intercept only)."},
+      {q:"Why does glmnet require <code>model.matrix()</code> instead of a formula?",options:["A) It handles categorical Y","B) glmnet expects a numeric matrix X; model.matrix expands factors to dummies and drops the intercept column with [,-1]","C) It requires sparse data","D) Formula interface is too slow"],correct:1,explain:"glmnet is matrix-based. Also useful to standardize automatically inside glmnet."},
+      {q:"glmnet automatically:",options:["A) Applies one-hot encoding","B) STANDARDIZES columns of X internally (and returns coefs on the original scale)","C) Handles missing data","D) Chooses alpha"],correct:1,explain:"standardize=TRUE by default. Saves you from manually scaling."},
+      {q:"Ridge beats Lasso when:",options:["A) Only a few predictors are important (sparse truth)","B) MANY predictors contribute SMALL effects; keeping all with shrinkage works best","C) Data are binary","D) Alpha=1"],correct:1,explain:"No sparse signal → shrinking (not dropping) is better."},
+      {q:"Lasso beats Ridge when:",options:["A) Many small effects","B) Only a FEW predictors truly matter (sparse signal); Lasso zeros out the rest and improves interpretability","C) Predictors are strongly correlated","D) Y is categorical"],correct:1,explain:"Under sparsity, selection is both better predictive and more interpretable."},
+      {q:"Ridge shrinks grouped correlated predictors, while Lasso:",options:["A) Drops all of them","B) Arbitrarily picks ONE from a correlated group and zeros out the rest (instability with correlated features)","C) Shrinks them all equally","D) Requires one-hot encoding"],correct:1,explain:"Lasso is unstable under correlation. Elastic Net fixes this by keeping the group together."},
+      {q:"Comparing models by test MSE on a held-out set:",options:["A) Always favors the simplest model","B) Lower test MSE = better generalization; best across Ridge/Lasso/ENet/OLS is the one to report","C) Uses training data only","D) Ignores lambda"],correct:1,explain:"Always evaluate predictive methods on held-out data."},
+      {q:"Why regularize at all?",options:["A) To inflate p-values","B) To prevent OVERFITTING, stabilize coefficients under multicollinearity, and improve test error","C) To force zero residuals","D) To avoid standardization"],correct:1,explain:"Regularization is the go-to remedy for high-dimensional / ill-conditioned regression problems."},
+      {q:"The penalty can be viewed as:",options:["A) An extra noise term","B) A constraint on the coefficient norm (L1 or L2 ball) during minimization","C) A test statistic","D) A likelihood"],correct:1,explain:"Equivalent formulations: min RSS s.t. ||β|| ≤ t vs. min(RSS + λ||β||)."},
+      {q:"Direction of coefficient shrinkage:",options:["A) Always away from zero","B) Toward zero (shrinkage toward 0)","C) Randomly","D) Toward the mean of Y"],correct:1,explain:"Regularization penalizes large |β|, pulling them toward 0."}
+    ],
+    bonus: [
+      {q:"Ridge MSE=24,500; Lasso MSE=31,200; ENet MSE=25,800; OLS MSE=28,000. Best choice:",options:["A) OLS","B) Ridge (lowest test MSE)","C) Lasso","D) ENet"],correct:1,explain:"Ridge has the lowest MSE. Ridge's superiority suggests many small non-zero effects (no sparsity)."},
+      {q:"Lasso coefficients at lambda.min:\nX1=1.2  X2=0.0  X3=0.0  X4=0.8  X5=0.0  X6=-0.3\nHow many predictors were selected?",options:["A) 0","B) 3 (X1, X4, X6 are non-zero)","C) 6","D) 5"],correct:1,explain:"Lasso zeros out X2, X3, X5. Non-zero coefficients count as selected."},
+      {q:"cv.glmnet: lambda.min=0.08, lambda.1se=0.25. Lambda.1se implies:",options:["A) The same model as lambda.min","B) A MORE regularized model → fewer predictors, slightly higher CV error, more parsimonious","C) A less regularized model","D) An error"],correct:1,explain:"Larger lambda ⇒ more shrinkage and sparsity; lambda.1se is chosen for parsimony."},
+      {q:"CV curve: lowest MSE at log(lambda)=−4; the 1-SE line crosses the curve at log(lambda)=−1. You would use:",options:["A) log(lambda)=−4 (lambda.min) for minimum error; log(lambda)=−1 (lambda.1se) for simpler model","B) log(lambda)=10","C) log(lambda)=−∞","D) Cannot tell"],correct:0,explain:"Standard rule: pick min for accuracy, pick 1se for parsimony."},
+      {q:"Ridge MSE=820, Lasso MSE=940, but Lasso dropped 15 of 30 predictors. Your best summary:",options:["A) Lasso is always preferred","B) Ridge wins on accuracy; Lasso wins on INTERPRETABILITY — pick based on goal","C) They are identical","D) Use OLS"],correct:1,explain:"Classic trade-off. Report both; recommend based on whether you need sparsity or minimum error."}
+    ],
+    prof: [
+      {q:"What is the main goal of multiple linear regression?",options:["A) Classify observations","B) Model relationship between response and predictors","C) Reduce dimensionality","D) Estimate probabilities"],correct:1,explain:"Models the relationship between a response and multiple predictors."},
+      {q:"Ordinary Least Squares (OLS) estimates coefficients by minimizing:",options:["A) Absolute error","B) Residual sum of squares (RSS)","C) Mean absolute error","D) Variance"],correct:1,explain:"OLS minimizes sum of squared residuals."},
+      {q:"The OLS solution is given by:",options:["A) (X^TX + λI)^(-1)X^Ty","B) (X^TX)^(-1)X^Ty","C) X^Ty","D) X^(-1)y"],correct:1,explain:"Closed-form OLS estimator."},
+      {q:"Multicollinearity occurs when:",options:["A) Predictors are independent","B) Predictors are highly correlated","C) Response is categorical","D) Errors are large"],correct:1,explain:"Strong correlation among predictors."},
+      {q:"Multicollinearity causes:",options:["A) Bias in coefficients","B) Large variance in estimates","C) Smaller datasets","D) Perfect predictions"],correct:1,explain:"Unstable estimates with high variance."},
+      {q:"When p is large relative to n, OLS becomes:",options:["A) More accurate","B) Unbiased","C) Unstable","D) Deterministic"],correct:2,explain:"High-dimensional → unstable, prone to overfitting."},
+      {q:"Overfitting occurs when:",options:["A) Model is too simple","B) Model fits training data too well but performs poorly on new data","C) Data is missing","D) Predictors are independent"],correct:1,explain:"Poor generalization despite strong training fit."},
+      {q:"Regularization adds what to the loss function?",options:["A) Noise","B) Bias only","C) Penalty term","D) Extra predictors"],correct:2,explain:"Regularization adds a penalty on coefficients."},
+      {q:"What does λ (lambda) control?",options:["A) Number of predictors","B) Strength of penalty","C) Sample size","D) Error variance"],correct:1,explain:"λ controls the amount of shrinkage."},
+      {q:"When λ = 0, regularized regression becomes:",options:["A) Ridge","B) Lasso","C) OLS","D) Elastic Net"],correct:2,explain:"No penalty → OLS."},
+      {q:"Increasing λ causes coefficients to:",options:["A) Increase","B) Stay the same","C) Shrink toward zero","D) Become random"],correct:2,explain:"Larger λ → stronger shrinkage."},
+      {q:"Regularization primarily reduces:",options:["A) Bias","B) Variance","C) Sample size","D) Predictors"],correct:1,explain:"Reduces variance while slightly increasing bias."},
+      {q:"Ridge regression uses which penalty?",options:["A) L1","B) L2","C) L0","D) Log"],correct:1,explain:"Ridge uses L2 (sum of squared coefficients)."},
+      {q:"The ridge estimator modifies OLS by adding:",options:["A) λX","B) λy","C) λI","D) λβ"],correct:2,explain:"Ridge adds λI to X^TX to stabilize inversion."},
+      {q:"In ridge regression, coefficients:",options:["A) Become zero","B) Stay unchanged","C) Shrink but remain nonzero","D) Become infinite"],correct:2,explain:"Ridge shrinks but does not set to zero."},
+      {q:"Lasso regression uses which penalty?",options:["A) L1","B) L2","C) L3","D) Quadratic"],correct:0,explain:"Lasso uses L1 (absolute values)."},
+      {q:"A key property of lasso regression is:",options:["A) Always keeps all variables","B) Sets some coefficients exactly to zero","C) Increases variance","D) Removes bias"],correct:1,explain:"Lasso performs automatic variable selection."},
+      {q:"When predictors are highly correlated, lasso tends to:",options:["A) Keep all predictors","B) Average coefficients","C) Select one and shrink others","D) Remove all predictors"],correct:2,explain:"Lasso selects one variable and eliminates others from correlated groups."},
+      {q:"Elastic Net combines:",options:["A) OLS and PCA","B) L1 and L2 penalties","C) Regression and classification","D) Mean and variance"],correct:1,explain:"Elastic Net = Lasso (L1) + Ridge (L2)."},
+      {q:"The bias-variance tradeoff in regularization implies:",options:["A) Both bias and variance decrease","B) Bias increases, variance decreases","C) Bias decreases, variance increases","D) Both increase"],correct:1,explain:"Regularization adds bias but reduces variance."}
+    ]
+  },
+  survival: {
+    name: "Survival Analysis",
+    base: [
+      {q:"Survival analysis is for:",options:["A) Any continuous outcome","B) TIME-TO-EVENT data (possibly censored)","C) Binary outcomes only","D) Count data only"],correct:1,explain:"Y is duration until an event; censoring means some durations aren't fully observed."},
+      {q:"Right-censoring occurs when:",options:["A) The event happened before the study started","B) The event has NOT occurred by the subject's end-of-follow-up (or dropout) — true event time is unknown, but known to exceed the observed time","C) Data are missing at random","D) The predictor is missing"],correct:1,explain:"The most common form of censoring in clinical / engineering studies."},
+      {q:"In survival data, status = 1 means:",options:["A) The subject was censored","B) The EVENT was observed","C) Missing data","D) The subject was excluded"],correct:1,explain:"status=1 event, status=0 censored (convention)."},
+      {q:"The survival function S(t) is:",options:["A) P(T = t)","B) P(T > t) — probability the event has NOT occurred by time t","C) The hazard at time t","D) The mean survival"],correct:1,explain:"S(t)=1−F(t). S(0)=1; S decreases; limit = 0."},
+      {q:"S(0) is always:",options:["A) 0","B) 1","C) 0.5","D) Undefined"],correct:1,explain:"At time 0 no events have occurred."},
+      {q:"The Kaplan-Meier estimator is a:",options:["A) Parametric exponential model","B) Non-parametric product-limit estimator of S(t)","C) Regression model","D) Mean estimate only"],correct:1,explain:"Computes S as a product of conditional survival probabilities at each event time."},
+      {q:"The KM curve is:",options:["A) A smooth curve","B) A STEP function: flat between events, drops at each event time","C) A straight line","D) Continuous and strictly decreasing"],correct:1,explain:"Drops only at observed events; censored observations leave the risk set without a drop."},
+      {q:"Median survival time is:",options:["A) The mean time to event","B) The first time t at which S(t) ≤ 0.5","C) The max follow-up time","D) Always the last event"],correct:1,explain:"Use the KM curve's crossing of 0.5. If survival never drops to 0.5, median is undefined."},
+      {q:"The log-rank test compares:",options:["A) Means of two groups","B) SURVIVAL CURVES across 2+ groups (H0: S1=S2=...)","C) Hazard functions only at one time","D) Residuals"],correct:1,explain:"Non-parametric test for differences in survival distributions."},
+      {q:"Null hypothesis of the log-rank test:",options:["A) All subjects have the same hazard at baseline","B) Survival curves are the SAME across groups","C) The Cox model fits","D) Censoring is uniform"],correct:1,explain:"Under H0 the observed events in each group equal expected events from pooled data."},
+      {q:"Cox Proportional Hazards model:",options:["A) h(t|X) = h0(t) + Xβ","B) h(t|X) = h0(t) · exp(β1X1 + ... + βpXp)","C) h(t|X) = Xβ","D) h(t|X) = β0"],correct:1,explain:"Baseline hazard h0(t) is unspecified; covariates act multiplicatively."},
+      {q:"The Hazard Ratio (HR) is:",options:["A) h(t|X+1) − h(t|X)","B) exp(β) — multiplicative change in hazard for a 1-unit increase in X","C) Always ≥ 1","D) The p-value"],correct:1,explain:"Analogue of OR (logistic) and IRR (Poisson). HR = exp(coef)."},
+      {q:"HR = 1.5 means:",options:["A) 50% lower hazard","B) 50% HIGHER hazard at any time, holding other covariates constant","C) The predictor is not significant","D) Baseline hazard equals 1.5"],correct:1,explain:"(HR−1)×100% = percent change in hazard per 1-unit X."},
+      {q:"HR < 1 means:",options:["A) Higher hazard","B) LOWER hazard (protective effect)","C) No effect","D) Infinite hazard"],correct:1,explain:"HR<1 protective; HR=1 no effect; HR>1 harmful."},
+      {q:"The Proportional Hazards assumption states:",options:["A) Hazards are identical across groups","B) The hazard RATIO between groups is CONSTANT over time (lines in log scale are parallel)","C) Baseline hazard is zero","D) No covariates are needed"],correct:1,explain:"If PH fails, HR changes over time; stratify, add a time-varying coefficient, or use a different model."},
+      {q:"Check the PH assumption with:",options:["A) <code>summary(cox)</code>","B) <code>cox.zph(cox)</code>","C) <code>vif(cox)</code>","D) <code>anova(cox)</code>"],correct:1,explain:"cox.zph tests each covariate and the global model for non-proportionality."},
+      {q:"The R function to fit Cox regression is:",options:["A) <code>lm()</code>","B) <code>coxph(Surv(time, status) ~ X1+X2, data=d)</code>","C) <code>kmeans()</code>","D) <code>glm(...,family=\"cox\")</code>"],correct:1,explain:"coxph lives in the survival package."},
+      {q:"To fit a Kaplan-Meier estimator in R:",options:["A) <code>survfit(Surv(time, status) ~ 1)</code> for overall; <code>~ group</code> for strata","B) <code>glm(Surv, ...)</code>","C) <code>aov(Surv ~ group)</code>","D) <code>kmeans(Surv)</code>"],correct:0,explain:"survfit() returns step-function KM estimates; plot() visualizes them."},
+      {q:"Cox regression is called SEMI-parametric because:",options:["A) Half the data are censored","B) The baseline hazard h0(t) is unspecified (non-parametric) while covariate effects are parametric (exp(Xβ))","C) It uses rank statistics only","D) It requires a parametric distribution"],correct:1,explain:"That's why Cox doesn't require choosing an exponential/Weibull/etc. form for survival times."},
+      {q:"Censored observations contribute to the analysis because:",options:["A) They are treated as events","B) We know the true event time exceeds the observed censoring time — that partial info sharpens the risk-set calculations","C) They are ignored entirely","D) They are imputed with the median"],correct:1,explain:"Excluding censored data biases estimates. KM/Cox properly use their partial information."}
+    ],
+    bonus: [
+      {q:"Given times = (2, 3, 5, 6, 8, 10) and status = (1, 1, 0, 1, 1, 0). S(3) = ?",options:["A) 0.50","B) (5/6) × (4/5) = 0.6667","C) 0.8333","D) 0.4444"],correct:1,explain:"S(2)=5/6=0.833, then S(3)=0.833×(4/5)=0.667."},
+      {q:"Cox output: coef age=0.189, exp(coef)=1.208, p=0.009. Interpretation:",options:["A) Age has no effect","B) Each additional year is associated with a 20.8% HIGHER hazard; significant at α=0.05","C) Age decreases hazard","D) Cannot compute"],correct:1,explain:"HR=1.208 ⇒ (1.208−1)×100%=20.8% increase; p=0.009 < 0.05."},
+      {q:"Log-rank test: χ²=7.4 on 1 df, p=0.006. Between-group survival:",options:["A) Not different (fail to reject)","B) SIGNIFICANTLY different (reject H0: S1=S2)","C) Test inconclusive","D) p > 0.05"],correct:1,explain:"p=0.006 < 0.05 → survival curves differ across groups."},
+      {q:"A subject leaves the study alive at t=8 before the event. Correct record:",options:["A) time=8, status=1","B) time=8, status=0 (censored)","C) Drop the subject","D) Impute time with mean"],correct:1,explain:"Alive at end / lost to follow-up = censored. status=0, retain the subject."},
+      {q:"KM curve crosses 0.5 between t=3 (S=0.667) and t=6 (S=0.444). Median survival:",options:["A) 3","B) 6 (by convention the first time S(t) falls to ≤ 0.5)","C) 4.5","D) Undefined"],correct:1,explain:"Median is read as the first event time at which S drops below 0.5."}
+    ],
+    prof: [
+      {q:"A time series is defined as:",options:["A) Random observations with no order","B) Observations collected over time in sequence","C) Independent variables only","D) Categorical data only"],correct:1,explain:"Data points recorded in chronological order."},
+      {q:"The key feature that distinguishes time series data is:",options:["A) Independence","B) Temporal ordering","C) Normality","D) Linearity"],correct:1,explain:"Observations are ordered over time, often creating dependence."},
+      {q:"Time series data often exhibit:",options:["A) Independence only","B) Correlation across time","C) Only randomness","D) No structure"],correct:1,explain:"Values are often correlated with past values (autocorrelation)."},
+      {q:"A stationary time series has:",options:["A) Changing mean and variance","B) Constant mean and variance over time","C) Increasing variance","D) No observations"],correct:1,explain:"Statistical properties remain constant over time."},
+      {q:"Which of the following violates stationarity?",options:["A) Constant mean","B) Constant variance","C) Trend over time","D) Constant autocorrelation"],correct:2,explain:"A trend changes the mean over time."},
+      {q:"Seasonality refers to:",options:["A) Random noise","B) Long-term trend","C) Repeating patterns at fixed intervals","D) Sudden spikes"],correct:2,explain:"Regular, repeating patterns (monthly/yearly)."},
+      {q:"A trend in time series data is:",options:["A) Short-term fluctuation","B) Long-term increase or decrease","C) Random variation","D) Measurement error"],correct:1,explain:"Long-term movement in data."},
+      {q:"Autocorrelation measures:",options:["A) Relationship between variables","B) Correlation of a variable with itself over time","C) Variance of data","D) Mean differences"],correct:1,explain:"Dependence between current and past values."},
+      {q:"White noise is characterized by:",options:["A) Strong patterns","B) Constant trend","C) No autocorrelation and constant variance","D) Increasing mean"],correct:2,explain:"Pure randomness with no structure."},
+      {q:"A lag in time series refers to:",options:["A) Missing data","B) Future values","C) Past observations","D) Variance"],correct:2,explain:"Represents previous time points (t−1, t−2)."},
+      {q:"Forecasting aims to:",options:["A) Explain past data","B) Predict future values","C) Remove noise","D) Normalize data"],correct:1,explain:"Predicts future observations."},
+      {q:"Moving average models use:",options:["A) Only current values","B) Past errors","C) Future values","D) Means only"],correct:1,explain:"MA models depend on past error terms."},
+      {q:"Autoregressive (AR) models use:",options:["A) Past values of the series","B) Only error terms","C) Future values","D) Means"],correct:0,explain:"AR models use previous observations."},
+      {q:"An AR(1) model uses:",options:["A) One past value","B) Two past values","C) No past values","D) Only errors"],correct:0,explain:"Uses the immediately previous value."},
+      {q:"Differencing is used to:",options:["A) Increase variance","B) Remove trend and achieve stationarity","C) Add seasonality","D) Normalize data"],correct:1,explain:"Stabilizes the mean."},
+      {q:"Overfitting in time series models leads to:",options:["A) Better predictions","B) Poor generalization to new data","C) Lower variance","D) Simpler models"],correct:1,explain:"Overfitting captures noise → bad future predictions."},
+      {q:"ACF stands for:",options:["A) Average correlation function","B) Auto covariance factor","C) Autocorrelation function","D) Adjusted coefficient function"],correct:2,explain:"Measures correlation at different lags."},
+      {q:"PACF stands for:",options:["A) Partial autocorrelation function","B) Predicted autocorrelation function","C) Probabilistic correlation function","D) Paired correlation function"],correct:0,explain:"Measures direct correlation excluding intermediate lags."},
+      {q:"A good forecasting model should:",options:["A) Fit training data perfectly only","B) Have low prediction error on new data","C) Ignore trends","D) Maximize variance"],correct:1,explain:"Goal is accurate future predictions, not just training fit."},
+      {q:"Model evaluation in time series often uses:",options:["A) R² only","B) Classification accuracy","C) Forecast error metrics (e.g., MSE)","D) Correlation only"],correct:2,explain:"Evaluated using prediction errors like MSE."}
+    ]
+  },
+  clustering: {
+    name: "Clustering (K-Means)",
+    base: [
+      {q:"K-means is:",options:["A) Supervised classification","B) UNSUPERVISED clustering — no Y required","C) A regression model","D) A statistical test"],correct:1,explain:"Clustering finds structure in X without using a response."},
+      {q:"K-means uses which distance metric?",options:["A) Manhattan","B) Euclidean (L2)","C) Cosine","D) Levenshtein"],correct:1,explain:"Standard K-means minimizes within-cluster squared Euclidean distance (WSS)."},
+      {q:"Before K-means you should ALWAYS:",options:["A) Drop categorical variables","B) STANDARDIZE (scale) the numeric variables so each contributes equally to the distance","C) Choose K=1","D) Set nstart=1"],correct:1,explain:"Without scaling, high-variance variables dominate the distance."},
+      {q:"The elbow method chooses K by:",options:["A) Picking the K with the largest WSS","B) Plotting WSS vs K and picking the 'bend' where WSS stops decreasing sharply","C) Always choosing K = n","D) Choosing K = 1"],correct:1,explain:"WSS always decreases as K rises (to 0 at K=n). The elbow indicates diminishing returns."},
+      {q:"As K increases, total WSS:",options:["A) Always increases","B) Monotonically decreases (reaches 0 at K=n)","C) Fluctuates randomly","D) Stays constant"],correct:1,explain:"More clusters ⇒ tighter fit to the data. Only marginal reductions matter."},
+      {q:"nstart=20 in kmeans() means:",options:["A) Use 20 clusters","B) Run the algorithm 20 times with different random starting centroids and keep the run with lowest WSS","C) Stop after 20 iterations","D) Drop 20 observations"],correct:1,explain:"K-means can find a local minimum; multiple starts help find the global optimum."},
+      {q:"K-means converges to:",options:["A) The global minimum always","B) A LOCAL minimum that depends on initialization (hence nstart)","C) The mean of the data","D) A parametric solution"],correct:1,explain:"Like many iterative methods, K-means is not guaranteed to find the global optimum from a single start."},
+      {q:"<code>km$centers</code> are reported in:",options:["A) Original units","B) SCALED (z-score) space if you scaled the input","C) Probabilities","D) Cluster sizes"],correct:1,explain:"Because you scaled X first, centers are in the scaled coordinate system."},
+      {q:"To interpret cluster means in ORIGINAL units:",options:["A) Multiply km$centers by n","B) Use <code>aggregate(original_X, by=list(cluster=km$cluster), mean)</code>","C) Use km$size","D) Use summary(km)"],correct:1,explain:"aggregate on unscaled data ⇒ interpretable means per cluster."},
+      {q:"K-means is sensitive to:",options:["A) The number of observations only","B) Outliers (since means are pulled by extreme values); K-medoids is more robust","C) Nothing","D) The order of rows"],correct:1,explain:"Extreme points distort centroids. Consider K-medoids (PAM) for robustness."},
+      {q:"K-means assumes clusters are:",options:["A) Arbitrarily shaped","B) Roughly SPHERICAL and of similar size (because Euclidean distance and means)","C) Of wildly different sizes","D) Bounded"],correct:1,explain:"Elongated or very uneven clusters may be poorly recovered by K-means."},
+      {q:"<code>km$cluster</code> returns:",options:["A) Cluster sizes","B) The integer cluster assignment for EACH observation","C) The centroids","D) The WSS"],correct:1,explain:"Length equals nrow(X). Used to color / group observations downstream."},
+      {q:"<code>km$size</code> returns:",options:["A) Number of predictors","B) The number of observations PER cluster","C) Distances to centroids","D) Iteration count"],correct:1,explain:"Helpful for flagging tiny clusters or imbalanced solutions."},
+      {q:"At K = n (one cluster per observation):",options:["A) WSS = 0","B) WSS is maximized","C) WSS = n","D) The algorithm fails"],correct:0,explain:"Each point IS its own centroid → zero within-cluster distance."},
+      {q:"The MOST distinguishing variable across clusters is identified by:",options:["A) Largest overall variance","B) Largest RANGE of cluster means (max cluster mean − min cluster mean) for that variable","C) Smallest mean","D) Largest correlation with cluster index"],correct:1,explain:"A variable that varies most across cluster means discriminates the clusters best."},
+      {q:"Silhouette width is an alternative measure; a value near 1 means:",options:["A) The observation is poorly clustered","B) The observation is well-matched to its cluster and far from others","C) Clusters overlap heavily","D) The K is too low"],correct:1,explain:"Silhouette in [-1,1]; near 1 is good, near 0 is ambiguous, negative suggests misassignment."},
+      {q:"Hierarchical clustering vs K-means:",options:["A) Identical","B) K-means requires pre-specifying K; hierarchical builds a dendrogram so you can choose K after","C) Hierarchical requires K","D) K-means uses a dendrogram"],correct:1,explain:"Different workflows: hierarchical is tree-based; K-means is partition-based."},
+      {q:"Why standardize (z-score) the data first?",options:["A) To make all variables normal","B) So that NO SINGLE variable dominates distance calculations due to scale","C) To speed up computation","D) To remove outliers"],correct:1,explain:"Without scaling, a variable measured in thousands will dominate one measured in units."},
+      {q:"The K-means algorithm:",options:["A) Assigns points then recomputes centroids iteratively until assignments stop changing","B) Uses gradient descent","C) Fits a likelihood","D) Searches exhaustively"],correct:0,explain:"Expectation/Assignment → Maximization/Update, repeated to convergence."},
+      {q:"WSS (within-cluster sum of squares) vs BSS (between-cluster sum of squares):",options:["A) WSS measures cluster compactness (lower=tighter); BSS measures separation (higher=better). Total SS = WSS + BSS","B) WSS and BSS are unrelated","C) BSS is irrelevant","D) WSS always equals BSS"],correct:0,explain:"Good clustering → low WSS, high BSS relative to total SS."}
+    ],
+    bonus: [
+      {q:"WSS values by K: 1→1000, 2→420, 3→300, 4→270, 5→260, 6→255. Suggested K:",options:["A) 6 (smallest WSS)","B) 3 (sharpest drop is between K=2 and K=3; WSS flattens after K=3)","C) 1","D) 5"],correct:1,explain:"Elbow at K=3 — beyond that, WSS decreases only marginally."},
+      {q:"Cluster means (original):\nC1: age=25, income=45k, score=70\nC2: age=55, income=90k, score=30\nC3: age=40, income=60k, score=50\nDescribe C1 to a marketer:",options:["A) 'Seniors with low spending'","B) 'Young, moderate-income, HIGH engagement / spending'","C) 'Middle-age big spenders'","D) 'Outliers'"],correct:1,explain:"C1 has the lowest age (25), moderate income, and highest score (70)."},
+      {q:"Cluster-mean ranges (max − min across clusters): income=45, age=30, score=40. The MOST distinguishing variable is:",options:["A) age","B) income (largest range = 45)","C) score","D) cannot tell"],correct:1,explain:"Larger range between cluster means ⇒ that variable better separates clusters."},
+      {q:"km$size: 120, 15, 85. Flag:",options:["A) Balanced clusters","B) Cluster 2 is very small (15) — check if it's a tiny subgroup, outliers, or needs K adjustment","C) Ignore","D) Always re-run"],correct:1,explain:"Very unbalanced cluster sizes can signal inappropriate K or outliers."},
+      {q:"km$centers (SCALED): C1=0.8, C2=-0.6 for var X. With mean_X=50 and sd_X=10 in original data, C1 in ORIGINAL units:",options:["A) 0.8","B) 50 + 0.8*10 = 58 (reverse the z-score: x = mean + z*sd)","C) 58 / 10","D) 50 - 0.8"],correct:1,explain:"Inverse standardization: x = mean + z·sd."}
+    ],
+    prof: [
+      {q:"Clustering is an example of:",options:["A) Supervised learning","B) Unsupervised learning","C) Reinforcement learning","D) Regression"],correct:1,explain:"Clustering is unsupervised — no labels provided."},
+      {q:"The goal of clustering is to:",options:["A) Predict outcomes","B) Maximize accuracy","C) Find hidden structure in data","D) Reduce variance"],correct:2,explain:"Discovers natural groupings / hidden patterns."},
+      {q:"Good clustering results in:",options:["A) Low within-cluster similarity","B) High between-cluster similarity","C) High within-cluster similarity and low between-cluster similarity","D) Random grouping"],correct:2,explain:"Clusters are internally similar and externally distinct."},
+      {q:"Clustering relies on the concept of:",options:["A) Probability","B) Distance or similarity","C) Regression","D) Correlation only"],correct:1,explain:"Observations are grouped based on distance/similarity measures."},
+      {q:"The most common distance used in K-means is:",options:["A) Manhattan distance","B) Cosine similarity","C) Euclidean distance","D) Hamming distance"],correct:2,explain:"K-means uses Euclidean (straight-line) distance."},
+      {q:"In K-means, K represents:",options:["A) Number of variables","B) Number of observations","C) Number of clusters","D) Number of iterations"],correct:2,explain:"K = number of clusters chosen."},
+      {q:"Each cluster in K-means is represented by:",options:["A) Median","B) Mode","C) Centroid","D) Residual"],correct:2,explain:"Each cluster represented by its centroid (mean point)."},
+      {q:"K-means aims to minimize:",options:["A) Total variance","B) Between-cluster variance","C) Within-cluster sum of squares (WSS)","D) Prediction error"],correct:2,explain:"Minimize within-cluster variation."},
+      {q:"The K-means algorithm starts by:",options:["A) Computing centroids","B) Assigning clusters","C) Choosing K","D) Standardizing data"],correct:2,explain:"First step: choose K."},
+      {q:"After initialization, each observation is assigned based on:",options:["A) Maximum variance","B) Closest centroid","C) Random assignment","D) Highest correlation"],correct:1,explain:"Points are assigned to the nearest centroid."},
+      {q:"After assigning clusters, the next step is to:",options:["A) Stop","B) Remove variables","C) Recompute centroids","D) Normalize data"],correct:2,explain:"Centroids are updated as means of assigned observations."},
+      {q:"K-means stops when:",options:["A) K = 1","B) All points are identical","C) Assignments no longer change","D) Variance becomes zero"],correct:2,explain:"Algorithm converges when cluster assignments stabilize."},
+      {q:"Why is scaling important in K-means?",options:["A) To increase speed","B) To reduce sample size","C) To prevent large-scale variables from dominating","D) To remove outliers"],correct:2,explain:"Large-scale variables can dominate distance calculations."},
+      {q:"Standardization transforms variables to have:",options:["A) Mean 1 and variance 0","B) Mean 0 and standard deviation 1","C) Mean 0 and variance 0","D) Mean 1 and standard deviation 1"],correct:1,explain:"Equal contribution of variables."},
+      {q:"K-means results can vary because of:",options:["A) Data size","B) Random initialization","C) Number of variables","D) Correlation"],correct:1,explain:"Different starting points → different solutions."},
+      {q:"Why use multiple random starts in K-means?",options:["A) To increase bias","B) To reduce computation","C) To find better clustering solutions","D) To reduce variables"],correct:2,explain:"Avoids poor local solutions."},
+      {q:"As K increases, WSS will:",options:["A) Increase","B) Decrease","C) Stay constant","D) Become negative"],correct:1,explain:"More clusters → points closer to centroids → WSS decreases."},
+      {q:"The elbow method is used to:",options:["A) Compute centroids","B) Select K","C) Scale data","D) Assign clusters"],correct:1,explain:"Helps choose the optimal number of clusters."},
+      {q:"The \"elbow\" point represents:",options:["A) Maximum clusters","B) Minimum clusters","C) Diminishing returns in WSS reduction","D) Perfect clustering"],correct:2,explain:"After the elbow, adding clusters gives little improvement."},
+      {q:"K-means clustering is best suited for:",options:["A) Categorical variables","B) Text data","C) Quantitative variables","D) Time series only"],correct:2,explain:"Relies on distance calculations — works best with numeric data."}
+    ]
+  }
+};
+
+// =============================================================
+// RENDERING
+// =============================================================
+const SECTIONS_ORDER = ["mlr","anova","logistic","poisson","nonparam","power","pca","regularized","survival","clustering"];
+const state = {
+  mode: "home",           // home | quiz | done
+  bank: "base",           // base | all (extended) | prof (professor sample)
+  sectionKey: null,
+  shuffle: true,          // shuffle question order
+  shuffleOpts: true,      // shuffle A/B/C/D position within each question
+  questions: [],
+  idx: 0,
+  answers: [],            // {chosen, correct}
+};
+
+function shuffleArr(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// Randomize which position (A/B/C/D) the correct answer sits in,
+// so the "longest-answer-is-right" pattern is destroyed.
+function shuffleOptions(q){
+  const n = q.options.length;
+  const order = shuffleArr([...Array(n).keys()]);
+  const newOptions = order.map(i => q.options[i]);
+  const newCorrect = order.indexOf(q.correct);
+  // Re-label A/B/C/D so labels stay in order visually
+  const relabeled = newOptions.map((opt, i) => {
+    const stripped = opt.replace(/^[A-D]\)\s*/, '');
+    return String.fromCharCode(65 + i) + ') ' + stripped;
+  });
+  return { ...q, options: relabeled, correct: newCorrect };
+}
+
+function h(html){ document.getElementById("app").innerHTML = html; }
+
+function bankSize(b, mode){
+  if(mode === "base") return b.base.length;
+  if(mode === "all")  return b.base.length + (b.bonus?b.bonus.length:0);
+  if(mode === "prof") return b.prof ? b.prof.length : 0;
+  return 0;
+}
+
+function renderHome(){
+  const m = state.bank;
+  h(`
+    <div class="topbar"><div>Claude Practice · user-generated</div><div></div></div>
+    <div class="title-eyebrow">Final Exam</div>
+    <h1>Practice Quiz</h1>
+    <div class="subtitle">Choose a question bank and section.</div>
+    <div class="tabs" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="tab ${m==='base'?'active':''}" onclick="pick('base')">Original (20/sec)</div>
+      <div class="tab ${m==='all'?'active':''}"  onclick="pick('all')">Extended (+bonus)</div>
+      <div class="tab ${m==='prof'?'active':''}" onclick="pick('prof')">Prof Sample</div>
+    </div>
+    <label class="toggle"><input type="checkbox" ${state.shuffle?'checked':''} onchange="state.shuffle=this.checked">Shuffle question order</label>
+    <label class="toggle"><input type="checkbox" ${state.shuffleOpts?'checked':''} onchange="state.shuffleOpts=this.checked">Shuffle answer options (A/B/C/D)</label>
+    <div class="section-list">
+      ${SECTIONS_ORDER.map((k,i)=>{
+        const b = BANKS[k];
+        const n = bankSize(b, m);
+        const dim = n===0 ? 'style="opacity:.4;cursor:not-allowed"' : '';
+        const click = n===0 ? '' : `onclick="startQuiz('${k}')"`;
+        return `<div class="section-card" ${dim} ${click}>
+          <h3>Section ${i+1}: ${b.name}</h3>
+          <div class="count">${n} questions${n===0?' (none in this tab)':''}</div>
+        </div>`;
+      }).join("")}
+    </div>
+    <div style="margin-top:40px;color:var(--dim);font-size:12px;text-align:center">
+      Original 200 MC · Extended +50 R-output · Prof Sample 190 exam-style MC
+    </div>
+  `);
+}
+window.pick = function(b){ state.bank=b; renderHome(); };
+
+function startQuiz(key){
+  state.sectionKey = key;
+  state.idx = 0;
+  state.answers = [];
+  const bank = BANKS[key];
+  let qs;
+  if(state.bank === "prof"){
+    qs = (bank.prof || []).slice();
+  } else {
+    qs = bank.base.slice();
+    if(state.bank === "all" && bank.bonus) qs = qs.concat(bank.bonus);
+  }
+  if(qs.length === 0) return;
+  if(state.shuffle) qs = shuffleArr(qs);
+  if(state.shuffleOpts) qs = qs.map(shuffleOptions);
+  state.questions = qs;
+  state.mode = "quiz";
+  renderQuiz();
+}
+window.startQuiz = startQuiz;
+
+function renderQuiz(){
+  const q = state.questions[state.idx];
+  const ans = state.answers[state.idx];
+  const locked = !!ans;
+  const pct = ((state.idx)/state.questions.length)*100;
+  h(`
+    <div class="topbar">
+      <div><a style="color:var(--dim);cursor:pointer" onclick="goHome()">← Sections</a></div>
+      <div>${BANKS[state.sectionKey].name}</div>
+    </div>
+    <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
+    <div class="qmeta"><span>Question ${state.idx+1} of ${state.questions.length}</span><span>Score: ${state.answers.filter(a=>a&&a.correct).length} / ${state.answers.length}</span></div>
+    <div class="qbox">
+      <div class="qtext">${q.q}</div>
+      ${q.output?`<div class="routput">${q.output}</div>`:""}
+      <div class="opts">
+        ${q.options.map((opt,i)=>{
+          let cls = "opt";
+          if(locked){
+            cls += " locked";
+            if(i === q.correct) cls += " correct";
+            else if(i === ans.chosen) cls += " wrong";
+          } else if(ans && ans.chosen === i){ cls += " chosen"; }
+          return `<div class="${cls}" onclick="${locked?'':'choose('+i+')'}">${opt}</div>`;
+        }).join("")}
+      </div>
+      ${locked?`<div class="explain"><strong>${ans.correct?'✓ Correct':'✗ Incorrect'}.</strong> ${q.explain}</div>`:""}
+    </div>
+    <div class="nav">
+      <button ${state.idx===0?'disabled':''} onclick="prev()">← Prev</button>
+      ${state.idx === state.questions.length-1
+        ? `<button class="primary" ${!locked?'disabled':''} onclick="finish()">Finish</button>`
+        : `<button class="primary" ${!locked?'disabled':''} onclick="next()">Next →</button>`}
+    </div>
+  `);
+}
+window.choose = function(i){
+  const q = state.questions[state.idx];
+  state.answers[state.idx] = { chosen:i, correct: i === q.correct };
+  renderQuiz();
+};
+window.next = function(){ state.idx++; renderQuiz(); };
+window.prev = function(){ state.idx--; renderQuiz(); };
+window.finish = function(){ state.mode="done"; renderDone(); };
+window.goHome = function(){ state.mode="home"; renderHome(); };
+
+function renderDone(){
+  const score = state.answers.filter(a=>a&&a.correct).length;
+  const total = state.questions.length;
+  const pct = Math.round(score/total*100);
+  h(`
+    <div class="topbar"><div></div><div></div></div>
+    <div class="finish">
+      <div class="title-eyebrow">${BANKS[state.sectionKey].name}</div>
+      <h2>Quiz Complete</h2>
+      <div class="score">${score} / ${total}</div>
+      <div class="pct">${pct}%</div>
+      <div style="margin-top:30px;display:flex;gap:10px;justify-content:center">
+        <button onclick="startQuiz('${state.sectionKey}')">Retry Section</button>
+        <button class="primary" onclick="goHome()">Back to Sections</button>
+      </div>
+    </div>
+  `);
+}
+
+renderHome();
+</script>
+</body>
+</html>
